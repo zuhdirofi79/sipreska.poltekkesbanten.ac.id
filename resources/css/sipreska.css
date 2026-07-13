@@ -1,0 +1,106 @@
+:root {
+    --sipreska-navy: #082b55;
+    --sipreska-active: #2563eb;
+    --sipreska-bg: #f6f8fc;
+    --sipreska-border: #e5e7eb;
+}
+
+body.sipreska-body {
+    background-color: var(--sipreska-bg);
+    color: #111827;
+}
+
+.sipreska-sidebar {
+    background-color: var(--sipreska-navy);
+}
+
+.sipreska-sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-radius: 0.75rem;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.82);
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sipreska-sidebar-link:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+
+.sipreska-sidebar-link.is-active {
+    background: linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%);
+    color: #fff;
+}
+
+.sipreska-card {
+    border: 1px solid var(--sipreska-border);
+    border-radius: 0.875rem;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+
+.sipreska-input,
+.sipreska-select,
+.sipreska-textarea {
+    width: 100%;
+    border: 1px solid var(--sipreska-border);
+    border-radius: 0.625rem;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+    background: #fff;
+}
+
+.sipreska-input:focus,
+.sipreska-select:focus,
+.sipreska-textarea:focus {
+    outline: 2px solid rgba(37, 99, 235, 0.25);
+    border-color: #2563eb;
+}
+
+.sipreska-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.625rem;
+    background: #2563eb;
+    color: #fff;
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.sipreska-btn-primary:hover {
+    background: #1d4ed8;
+}
+
+.sipreska-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.625rem;
+    border: 1px solid var(--sipreska-border);
+    background: #fff;
+    color: #374151;
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.sipreska-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 9999px;
+    padding: 0.125rem 0.625rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.sipreska-badge-blue { background: #dbeafe; color: #1d4ed8; }
+.sipreska-badge-green { background: #dcfce7; color: #15803d; }
+.sipreska-badge-gray { background: #f3f4f6; color: #4b5563; }
+.sipreska-badge-purple { background: #ede9fe; color: #6d28d9; }
+.sipreska-badge-red { background: #fee2e2; color: #b91c1c; }
