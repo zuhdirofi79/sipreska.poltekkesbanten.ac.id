@@ -27,9 +27,39 @@
             margin-bottom: 25px;
         }
 
-        .logo img {
+        .logo img,
+        .logo .sipreska-logo {
             max-width: 320px;
             height: auto;
+        }
+
+        .sipreska-logo-wrap {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            max-width: 100%;
+        }
+
+        .sipreska-logo-default {
+            max-width: 320px;
+            height: auto;
+            object-fit: contain;
+        }
+
+        .sipreska-logo-fallback-default {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 4rem;
+            height: 4rem;
+            border-radius: 0.75rem;
+            background: #eef2ff;
+            color: #1d4ed8;
+        }
+
+        .sipreska-logo-fallback-icon {
+            width: 55%;
+            height: 55%;
         }
 
         h1 {
@@ -113,7 +143,7 @@
 <body>
 <div class="container">
     <div class="logo">
-        <img src="{{ asset('images/logo-poltekkes-banten.png') }}" alt="Logo Poltekkes Kemenkes Banten">
+        <x-sipreska-logo variant="default" />
     </div>
 
     <h1>{{ $eventForm->title }}</h1>

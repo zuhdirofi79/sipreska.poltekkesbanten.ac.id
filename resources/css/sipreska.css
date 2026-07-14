@@ -90,6 +90,24 @@ body.sipreska-body {
     font-weight: 600;
 }
 
+.sipreska-btn-primary:disabled,
+.sipreska-btn-secondary:disabled,
+.sipreska-btn-primary[disabled],
+.sipreska-btn-secondary[disabled] {
+    cursor: not-allowed;
+    opacity: 0.55;
+    pointer-events: none;
+}
+
+.sipreska-btn-primary:focus-visible,
+.sipreska-btn-secondary:focus-visible,
+.sipreska-input:focus-visible,
+.sipreska-select:focus-visible,
+.sipreska-textarea:focus-visible {
+    outline: 2px solid rgba(37, 99, 235, 0.45);
+    outline-offset: 2px;
+}
+
 .sipreska-badge {
     display: inline-flex;
     align-items: center;
@@ -104,3 +122,133 @@ body.sipreska-body {
 .sipreska-badge-gray { background: #f3f4f6; color: #4b5563; }
 .sipreska-badge-purple { background: #ede9fe; color: #6d28d9; }
 .sipreska-badge-red { background: #fee2e2; color: #b91c1c; }
+
+[x-cloak] {
+    display: none !important;
+}
+
+.sipreska-tab {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 0.625rem;
+    padding: 0.5rem 0.875rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6b7280;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sipreska-tab:hover {
+    background: #f3f4f6;
+    color: #111827;
+}
+
+.sipreska-tab.is-active {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.sipreska-stat-card {
+    border: 1px solid var(--sipreska-border);
+    border-radius: 0.875rem;
+    background: #fff;
+    padding: 1.25rem;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+
+.sipreska-progress-track {
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: #e5e7eb;
+    overflow: hidden;
+}
+
+.sipreska-progress-bar {
+    height: 100%;
+    border-radius: 9999px;
+    transition: width 0.3s ease;
+}
+
+.sipreska-calendar-cell {
+    background: #fff;
+}
+
+.sipreska-signature-canvas {
+    display: block;
+    touch-action: none;
+    cursor: crosshair;
+    border-radius: 0.625rem;
+    background: #fafafa;
+}
+
+.sipreska-logo-wrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 100%;
+}
+
+.sipreska-logo {
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+}
+
+.sipreska-logo-sidebar {
+    height: 3.5rem;
+    max-height: 4rem;
+}
+
+.sipreska-logo-login {
+    height: 90px;
+}
+
+.sipreska-logo-header {
+    height: 2.5rem;
+    max-height: 2.75rem;
+}
+
+.sipreska-logo-default {
+    max-width: 320px;
+    height: auto;
+}
+
+.sipreska-logo-fallback {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.75rem;
+}
+
+.sipreska-logo-fallback-sidebar {
+    width: 3.5rem;
+    height: 3.5rem;
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.92);
+}
+
+.sipreska-logo-fallback-login {
+    width: 5.625rem;
+    height: 5.625rem;
+    background: #eef2ff;
+    color: #1d4ed8;
+}
+
+.sipreska-logo-fallback-header {
+    width: 2.5rem;
+    height: 2.5rem;
+    background: #eef2ff;
+    color: #1d4ed8;
+}
+
+.sipreska-logo-fallback-default {
+    width: 4rem;
+    height: 4rem;
+    background: #eef2ff;
+    color: #1d4ed8;
+}
+
+.sipreska-logo-fallback-icon {
+    width: 55%;
+    height: 55%;
+}

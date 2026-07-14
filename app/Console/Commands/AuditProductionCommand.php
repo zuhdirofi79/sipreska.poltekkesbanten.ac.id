@@ -150,11 +150,40 @@ class AuditProductionCommand extends Command
             ));
         }
 
-        $logoPath = public_path('images/logo-poltekkes-banten.png');
+        $logoPath = public_path(\App\Support\SipreskaBranding::logoPath());
         $this->kv('Logo file exists', file_exists($logoPath) ? 'yes' : 'no');
         if (file_exists($logoPath)) {
             $this->kv('Logo file size', (string) filesize($logoPath).' bytes');
         }
+
+        $this->auditDocumentStorage();
+    }
+
+    private function auditDocumentStorage(): void
+    {
+        $this->line('');
+        $this->line('  SIPRESKA Document Storage (public/docs):');
+
+        $documentRoot = (string) config('sipreska.document_root', public_path('docs'));
+        $this->kv('SIPRESKA_DOCUMENT_ROOT', $documentRoot);
+        $this->kv('docs root exists', File::isDirectory($documentRoot) ? 'yes' : 'no');
+        $this->kv('docs root writable', File::isDirectory($documentRoot) && is_writable($documentRoot) ? 'yes' : 'no');
+
+        $htaccess = $documentRoot.DIRECTORY_SEPARATOR.'.htaccess';
+        $this->kv('docs/.htaccess exists', File::exists($htaccess) ? 'yes' : 'no');
+
+        foreach (config('sipreska.document_folders', []) as $type => $folder) {
+            $path = $documentRoot.DIRECTORY_SEPARATOR.$folder;
+            $exists = File::isDirectory($path);
+            $this->line(sprintf(
+                '    - %-20s exists=%s writable=%s',
+                $folder,
+                $exists ? 'yes' : 'no',
+                $exists && is_writable($path) ? 'yes' : 'no',
+            ));
+        }
+
+        $this->kv('storage:link required', 'no (Hostinger-compatible public/docs)');
     }
 
     private function auditDatabase(): bool
@@ -237,6 +266,12 @@ class AuditProductionCommand extends Command
             'units',
             'categories',
             'activities',
+            'invitation_documents',
+            'minutes_documents',
+            'documentations',
+            'publications',
+            'attendance_forms',
+            'attendance_responses',
             'sessions',
             'cache',
             'jobs',

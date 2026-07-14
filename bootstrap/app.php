@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'active' => \App\Http\Middleware\EnsureUserIsActive::class,
             'password.changed' => \App\Http\Middleware\EnsurePasswordChanged::class,
             'superadmin' => \App\Http\Middleware\EnsureSuperadmin::class,
+            'custom.app' => \App\Http\Middleware\EnsureCustomAppAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

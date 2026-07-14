@@ -60,6 +60,6 @@ class RouteLegacyTest extends TestCase
 
     public function test_reserved_slug_returns_not_found_on_legacy_route(): void
     {
-        $this->get('/kegiatan')->assertNotFound();
+        $this->get('/absensi')->assertNotFound();
     }
 }

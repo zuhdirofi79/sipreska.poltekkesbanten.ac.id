@@ -4,6 +4,7 @@
             <button type="button" class="rounded-lg border border-gray-200 px-3 py-2 text-sm lg:hidden" @click="sidebarOpen = !sidebarOpen">
                 Menu
             </button>
+            <x-sipreska-logo variant="header" class="hidden sm:block" />
             <div>
                 <h1 class="text-lg font-semibold text-gray-900">@yield('page_title', 'SIPRESKA')</h1>
                 @hasSection('page_description')

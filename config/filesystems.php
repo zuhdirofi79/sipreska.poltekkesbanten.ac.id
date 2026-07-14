@@ -47,6 +47,14 @@ return [
             'report' => false,
         ],
 
+        'sipreska' => [
+            'driver' => 'local',
+            'root' => env('SIPRESKA_PUBLIC_ROOT', public_path()),
+            'serve' => false,
+            'throw' => false,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

@@ -4,6 +4,9 @@
 >
     <div class="flex h-full flex-col px-4 py-6">
         <div class="mb-8 px-2">
+            <div class="mb-4 flex justify-center lg:justify-start">
+                <x-sipreska-logo variant="sidebar" />
+            </div>
             <div class="text-lg font-bold tracking-wide">SIPRESKA</div>
             <div class="mt-1 text-xs text-white/70">Sistem Informasi Presensi dan Kegiatan</div>
             <div class="text-xs text-white/70">Poltekkes Kemenkes Banten</div>
@@ -13,8 +16,12 @@
             <div>
                 <div class="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-white/50">Menu Utama</div>
                 <div class="space-y-1">
-                    <span class="sipreska-sidebar-link opacity-60">Agenda Kegiatan</span>
-                    <span class="sipreska-sidebar-link opacity-60">Kalender Kegiatan</span>
+                    <a href="{{ route('activities.index') }}" class="sipreska-sidebar-link {{ request()->routeIs('activities.*') ? 'is-active' : '' }}">
+                        Agenda Kegiatan
+                    </a>
+                    <a href="{{ route('calendar.index') }}" class="sipreska-sidebar-link {{ request()->routeIs('calendar.*') ? 'is-active' : '' }}">
+                        Kalender Kegiatan
+                    </a>
                     <a href="{{ route('dashboard') }}" class="sipreska-sidebar-link {{ request()->routeIs('dashboard') ? 'is-active' : '' }}">
                         Dashboard - Statistik
                     </a>
@@ -28,9 +35,15 @@
                         <a href="{{ route('users.index') }}" class="sipreska-sidebar-link {{ request()->routeIs('users.*') ? 'is-active' : '' }}">
                             Manajemen Pengguna
                         </a>
-                        <span class="sipreska-sidebar-link opacity-60">Master Kategori</span>
-                        <span class="sipreska-sidebar-link opacity-60">Master Unit</span>
-                        <span class="sipreska-sidebar-link opacity-60">Log Aktivitas</span>
+                        <a href="{{ route('master.categories.index') }}" class="sipreska-sidebar-link {{ request()->routeIs('master.categories.*') ? 'is-active' : '' }}">
+                            Master Kategori
+                        </a>
+                        <a href="{{ route('master.units.index') }}" class="sipreska-sidebar-link {{ request()->routeIs('master.units.*') ? 'is-active' : '' }}">
+                            Master Unit
+                        </a>
+                        <a href="{{ route('activity-logs.index') }}" class="sipreska-sidebar-link {{ request()->routeIs('activity-logs.*') ? 'is-active' : '' }}">
+                            Log Aktivitas
+                        </a>
                     </div>
                 </div>
             @endif
@@ -38,7 +51,9 @@
             <div>
                 <div class="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-white/50">Akun</div>
                 <div class="space-y-1">
-                    <span class="sipreska-sidebar-link opacity-60">Profil</span>
+                    <a href="{{ route('profile.edit') }}" class="sipreska-sidebar-link {{ request()->routeIs('profile.*') ? 'is-active' : '' }}">
+                        Profil
+                    </a>
                     <a href="{{ route('password.change') }}" class="sipreska-sidebar-link {{ request()->routeIs('password.*') ? 'is-active' : '' }}">
                         Ganti Password
                     </a>

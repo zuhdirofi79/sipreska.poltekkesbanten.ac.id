@@ -9,6 +9,9 @@
 <body class="sipreska-body flex min-h-screen items-center justify-center p-4">
     <div class="sipreska-card w-full max-w-md p-8">
         <div class="mb-6 text-center">
+            <div class="mb-4 flex justify-center">
+                <x-sipreska-logo variant="login" />
+            </div>
             <h1 class="text-2xl font-bold text-gray-900">SIPRESKA</h1>
             <p class="mt-1 text-sm text-gray-500">Sistem Informasi Presensi dan Kegiatan</p>
             <p class="text-sm text-gray-500">Poltekkes Kemenkes Banten</p>
