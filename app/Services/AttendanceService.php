@@ -40,23 +40,82 @@ class AttendanceService
         return bin2hex(random_bytes(32));
     }
 
-    public function normalizeNipNik(string $value): string
+    public function normalizeIdentity(?string $value): ?string
     {
-        return preg_replace('/\D+/', '', trim($value)) ?? '';
+        if ($value === null) {
+            return null;
+        }
+
+        $trimmed = trim($value);
+
+        if ($trimmed === '') {
+            return null;
+        }
+
+        $withoutSeparators = str_replace([' ', '.', '-'], '', $trimmed);
+        $digits = preg_replace('/\D+/', '', $withoutSeparators) ?? '';
+
+        return $digits === '' ? null : $digits;
     }
 
-    public function isDuplicate(AttendanceForm $form, string $nipNik): bool
+    /** @deprecated Use normalizeIdentity() instead. Kept for legacy references. */
+    public function normalizeNipNik(string $value): string
     {
-        $normalized = $this->normalizeNipNik($nipNik);
+        return $this->normalizeIdentity($value) ?? '';
+    }
 
-        if ($normalized === '') {
+    public function isDuplicateNik(AttendanceForm $form, ?string $nikNormalized, ?int $excludeId = null): bool
+    {
+        if ($nikNormalized === null || $nikNormalized === '') {
             return false;
         }
 
-        return AttendanceResponse::query()
-            ->where('attendance_form_id', $form->id)
-            ->where('nip_nik_normalized', $normalized)
-            ->exists();
+        return $this->identityExists($form, 'nik_normalized', $nikNormalized, $excludeId);
+    }
+
+    public function isDuplicateNip(AttendanceForm $form, ?string $nipNormalized, ?int $excludeId = null): bool
+    {
+        if ($nipNormalized === null || $nipNormalized === '') {
+            return false;
+        }
+
+        return $this->identityExists($form, 'nip_normalized', $nipNormalized, $excludeId);
+    }
+
+    /**
+     * @return array{nik: ?string, nip: ?string, nik_normalized: ?string, nip_normalized: ?string}
+     */
+    public function resolveIdentityFields(array $data): array
+    {
+        $nik = $this->nullableString($data['nik'] ?? null);
+        $nip = $this->nullableString($data['nip'] ?? null);
+
+        return [
+            'nik' => $nik,
+            'nip' => $nip,
+            'nik_normalized' => $this->normalizeIdentity($nik),
+            'nip_normalized' => $this->normalizeIdentity($nip),
+        ];
+    }
+
+    public function duplicateSubmissionMessage(?string $nikNormalized, ?string $nipNormalized, AttendanceForm $form, ?int $excludeId = null): ?string
+    {
+        $nikDuplicate = $this->isDuplicateNik($form, $nikNormalized, $excludeId);
+        $nipDuplicate = $this->isDuplicateNip($form, $nipNormalized, $excludeId);
+
+        if ($nikDuplicate && $nipDuplicate) {
+            return 'Data kehadiran Anda sudah tercatat untuk kegiatan ini.';
+        }
+
+        if ($nikDuplicate) {
+            return 'Data dengan NIK tersebut sudah tercatat untuk kegiatan ini.';
+        }
+
+        if ($nipDuplicate) {
+            return 'Data dengan NIP tersebut sudah tercatat untuk kegiatan ini.';
+        }
+
+        return null;
     }
 
     public function submitResponse(AttendanceForm $form, array $data, Request $request): AttendanceResponse
@@ -65,14 +124,10 @@ class AttendanceService
             throw new RuntimeException('Formulir absensi sedang ditutup.');
         }
 
-        $normalized = $this->normalizeNipNik((string) ($data['nip_nik'] ?? ''));
+        $identity = $this->resolveIdentityFields($data);
 
-        if ($normalized === '') {
-            throw new RuntimeException('NIP/NIK wajib diisi.');
-        }
-
-        if ($this->isDuplicate($form, $normalized)) {
-            throw new RuntimeException('NIP/NIK sudah terdaftar pada kegiatan ini.');
+        if ($message = $this->duplicateSubmissionMessage($identity['nik_normalized'], $identity['nip_normalized'], $form)) {
+            throw new RuntimeException($message);
         }
 
         $workUnit = AttendanceWorkUnit::from((string) $data['work_unit']);
@@ -87,7 +142,11 @@ class AttendanceService
             $signatureBinary = $this->decodeSignaturePng((string) ($data['signature_data'] ?? ''));
         }
 
-        return DB::transaction(function () use ($form, $data, $request, $normalized, $workUnit, $signatureBinary) {
+        return DB::transaction(function () use ($form, $data, $request, $identity, $workUnit, $signatureBinary) {
+            if ($message = $this->duplicateSubmissionMessage($identity['nik_normalized'], $identity['nip_normalized'], $form)) {
+                throw new RuntimeException($message);
+            }
+
             $signatureMeta = $this->fileStorage->storeBinary(
                 $signatureBinary ?? $this->placeholderPng(),
                 'signature',
@@ -99,8 +158,12 @@ class AttendanceService
             $response = AttendanceResponse::query()->create([
                 'attendance_form_id' => $form->id,
                 'name' => (string) $data['name'],
-                'nip_nik' => (string) $data['nip_nik'],
-                'nip_nik_normalized' => $normalized,
+                'nik' => $identity['nik'],
+                'nik_normalized' => $identity['nik_normalized'],
+                'nip' => $identity['nip'],
+                'nip_normalized' => $identity['nip_normalized'],
+                'nip_nik' => null,
+                'nip_nik_normalized' => null,
                 'position' => $data['position'] ?? null,
                 'work_unit' => $workUnit->value,
                 'institution_name' => $data['institution_name'] ?? null,
@@ -116,12 +179,49 @@ class AttendanceService
                 'attendance_response',
                 $response->id,
                 null,
-                $response->only(['name', 'nip_nik', 'work_unit', 'submitted_at']),
+                $response->auditSnapshot(),
                 $request,
             );
 
             return $response;
         });
+    }
+
+    public function updateResponse(AttendanceResponse $response, array $data, ?Request $request = null): AttendanceResponse
+    {
+        $identity = $this->resolveIdentityFields($data);
+        $form = $response->form;
+
+        if ($form === null) {
+            throw new RuntimeException('Form absensi tidak ditemukan.');
+        }
+
+        if ($message = $this->duplicateSubmissionMessage($identity['nik_normalized'], $identity['nip_normalized'], $form, $response->id)) {
+            throw new RuntimeException($message);
+        }
+
+        $oldValues = $response->auditSnapshot();
+
+        $response->fill([
+            'name' => (string) $data['name'],
+            'nik' => $identity['nik'],
+            'nik_normalized' => $identity['nik_normalized'],
+            'nip' => $identity['nip'],
+            'nip_normalized' => $identity['nip_normalized'],
+            'position' => $data['position'] ?? null,
+            'work_unit' => (string) $data['work_unit'],
+            'institution_name' => $data['institution_name'] ?? null,
+        ])->save();
+
+        $this->auditLog->logModelChange(
+            'attendance_response_updated',
+            $response,
+            $oldValues,
+            $response->auditSnapshot(),
+            $request,
+        );
+
+        return $response->fresh();
     }
 
     public function updateSettings(AttendanceForm $form, array $data, ?Request $request = null): AttendanceForm
@@ -177,6 +277,8 @@ class AttendanceService
             $term = $filters['search'];
             $query->where(function (Builder $builder) use ($term): void {
                 $builder->where('name', 'like', "%{$term}%")
+                    ->orWhere('nik', 'like', "%{$term}%")
+                    ->orWhere('nip', 'like', "%{$term}%")
                     ->orWhere('nip_nik', 'like', "%{$term}%")
                     ->orWhere('position', 'like', "%{$term}%");
             });
@@ -240,7 +342,7 @@ class AttendanceService
     public function deleteResponse(AttendanceResponse $response, ?Request $request = null): void
     {
         DB::transaction(function () use ($response, $request) {
-            $oldValues = $response->only(['name', 'nip_nik', 'work_unit', 'submitted_at']);
+            $oldValues = $response->auditSnapshot();
             $signaturePath = $response->signature_path;
 
             $response->delete();
@@ -255,6 +357,26 @@ class AttendanceService
                 $request,
             );
         });
+    }
+
+    private function identityExists(AttendanceForm $form, string $column, string $normalized, ?int $excludeId): bool
+    {
+        return AttendanceResponse::query()
+            ->where('attendance_form_id', $form->id)
+            ->where($column, $normalized)
+            ->when($excludeId !== null, fn (Builder $query) => $query->where('id', '!=', $excludeId))
+            ->exists();
+    }
+
+    private function nullableString(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $trimmed = trim((string) $value);
+
+        return $trimmed === '' ? null : $trimmed;
     }
 
     private function decodeSignaturePng(string $data): string

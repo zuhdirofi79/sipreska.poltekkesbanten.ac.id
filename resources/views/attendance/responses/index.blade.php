@@ -125,7 +125,7 @@
                 type="search"
                 name="search"
                 value="{{ $filters['search'] }}"
-                placeholder="Cari nama, NIP/NIK, jabatan..."
+                placeholder="Cari nama, NIK, NIP, identitas lama, jabatan..."
                 class="sipreska-input lg:col-span-2"
             >
             <select name="work_unit" class="sipreska-select">
@@ -164,7 +164,9 @@
                         <th class="px-4 py-3 font-medium whitespace-nowrap">No</th>
                         <th class="px-4 py-3 font-medium whitespace-nowrap">Waktu Submit</th>
                         <th class="px-4 py-3 font-medium whitespace-nowrap">Nama</th>
-                        <th class="px-4 py-3 font-medium whitespace-nowrap">NIP / NIK</th>
+                        <th class="px-4 py-3 font-medium whitespace-nowrap">NIK</th>
+                        <th class="px-4 py-3 font-medium whitespace-nowrap">NIP</th>
+                        <th class="px-4 py-3 font-medium whitespace-nowrap">Identitas Lama</th>
                         <th class="px-4 py-3 font-medium whitespace-nowrap">Jabatan</th>
                         <th class="px-4 py-3 font-medium whitespace-nowrap">Unit Kerja</th>
                         <th class="px-4 py-3 font-medium whitespace-nowrap">Nama Instansi</th>
@@ -184,7 +186,18 @@
                             <td class="px-4 py-3 whitespace-nowrap text-gray-500">{{ $responses->firstItem() + $index }}</td>
                             <td class="px-4 py-3 whitespace-nowrap">{{ DateTimeFormatter::display($response->submitted_at) }}</td>
                             <td class="px-4 py-3 font-medium text-gray-900">{{ $response->name }}</td>
-                            <td class="px-4 py-3 whitespace-nowrap">{{ $response->nip_nik }}</td>
+                            <td class="px-4 py-3 whitespace-nowrap">{{ $response->nik ?? '-' }}</td>
+                            <td class="px-4 py-3 whitespace-nowrap">{{ $response->nip ?? '-' }}</td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                @if ($response->hasLegacyIdentity())
+                                    <span class="inline-flex items-center gap-1">
+                                        <span>{{ $response->legacyIdentity() }}</span>
+                                        <span class="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-amber-800">Data legacy</span>
+                                    </span>
+                                @else
+                                    -
+                                @endif
+                            </td>
                             <td class="px-4 py-3">{{ $response->position ?? '-' }}</td>
                             <td class="px-4 py-3">{{ $workUnitLabel }}</td>
                             <td class="px-4 py-3">{{ $response->institution_name ?? '-' }}</td>

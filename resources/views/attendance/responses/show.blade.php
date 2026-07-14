@@ -33,9 +33,22 @@
                 <dd class="font-medium text-gray-900">{{ $response->name }}</dd>
             </div>
             <div>
-                <dt class="text-gray-500">NIP / NIK</dt>
-                <dd class="font-medium text-gray-900">{{ $response->nip_nik }}</dd>
+                <dt class="text-gray-500">NIK</dt>
+                <dd class="font-medium text-gray-900">{{ $response->nik ?? '-' }}</dd>
             </div>
+            <div>
+                <dt class="text-gray-500">NIP</dt>
+                <dd class="font-medium text-gray-900">{{ $response->nip ?? '-' }}</dd>
+            </div>
+            @if ($response->hasLegacyIdentity())
+                <div class="sm:col-span-2">
+                    <dt class="text-gray-500">Identitas Lama</dt>
+                    <dd class="font-medium text-gray-900">
+                        {{ $response->legacyIdentity() }}
+                        <span class="ml-2 rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">Data legacy — belum terklasifikasi</span>
+                    </dd>
+                </div>
+            @endif
             <div>
                 <dt class="text-gray-500">Jabatan</dt>
                 <dd class="font-medium text-gray-900">{{ $response->position ?? '-' }}</dd>

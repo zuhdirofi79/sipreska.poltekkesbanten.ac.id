@@ -11,8 +11,7 @@ use App\Models\AttendanceResponse;
 use App\Services\AttendanceExportService;
 use App\Services\AttendanceService;
 use App\Services\AuditLogService;
-use chillerlan\QRCode\QRCode;
-use chillerlan\QRCode\QROptions;
+use App\Support\AttendanceQrImage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -119,7 +118,9 @@ class ActivityAttendanceController extends Controller
             'responses' => $responses->map(fn (AttendanceResponse $response) => [
                 'id' => $response->id,
                 'name' => $response->name,
-                'nip_nik' => $response->nip_nik,
+                'nik' => $response->nik,
+                'nip' => $response->nip,
+                'legacy_identity' => $response->legacyIdentity(),
                 'position' => $response->position,
                 'work_unit' => AttendanceWorkUnit::tryFrom($response->work_unit)?->label() ?? $response->work_unit,
                 'institution_name' => $response->institution_name,
@@ -128,20 +129,15 @@ class ActivityAttendanceController extends Controller
         ]);
     }
 
-    public function qr(Activity $activity): Response
+    public function qr(Request $request, Activity $activity): Response
     {
         $this->authorize('manageAttendance', $activity);
 
         $form = $this->attendanceService->ensureForm($activity);
         $url = route('attendance.public.show', ['public_token' => $form->public_token]);
+        $forDownload = $request->integer('size') === 1024;
 
-        $options = new QROptions([
-            'outputType' => QRCode::OUTPUT_IMAGE_PNG,
-            'scale' => 8,
-            'imageTransparent' => false,
-        ]);
-
-        $png = (new QRCode($options))->render($url);
+        $png = AttendanceQrImage::generate($url, $forDownload);
 
         return response($png, 200, ['Content-Type' => 'image/png']);
     }
@@ -209,36 +205,15 @@ class ActivityAttendanceController extends Controller
             abort(404);
         }
 
-        $normalized = $this->attendanceService->normalizeNipNik($request->string('nip_nik')->toString());
+        try {
+            $this->attendanceService->updateResponse($response, $request->validated(), $request);
+        } catch (\RuntimeException $exception) {
+            if (str_contains($exception->getMessage(), 'sudah tercatat untuk kegiatan ini')) {
+                return back()->withErrors(['form' => $exception->getMessage()])->withInput();
+            }
 
-        $duplicate = AttendanceResponse::query()
-            ->where('attendance_form_id', $form->id)
-            ->where('nip_nik_normalized', $normalized)
-            ->where('id', '!=', $response->id)
-            ->exists();
-
-        if ($duplicate) {
-            return back()->withErrors(['nip_nik' => 'NIP/NIK sudah terdaftar pada kegiatan ini.'])->withInput();
+            throw $exception;
         }
-
-        $oldValues = $response->only(['name', 'nip_nik', 'position', 'work_unit', 'institution_name']);
-
-        $response->fill([
-            'name' => $request->string('name')->toString(),
-            'nip_nik' => $request->string('nip_nik')->toString(),
-            'nip_nik_normalized' => $normalized,
-            'position' => $request->input('position'),
-            'work_unit' => $request->string('work_unit')->toString(),
-            'institution_name' => $request->input('institution_name'),
-        ])->save();
-
-        $this->auditLog->logModelChange(
-            'attendance_response_updated',
-            $response,
-            $oldValues,
-            $response->only(['name', 'nip_nik', 'position', 'work_unit', 'institution_name']),
-            $request,
-        );
 
         return redirect()
             ->route('activities.daftar-hadir.responses', $activity)

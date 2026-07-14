@@ -1,0 +1,463 @@
+<?php
+
+namespace Tests\Feature\Sipreska;
+
+use App\Enums\AttendanceWorkUnit;
+use App\Models\Activity;
+use App\Models\AttendanceForm;
+use App\Models\AttendanceResponse;
+use App\Models\ActivityLog;
+use App\Services\AttendanceExportService;
+use App\Services\AttendanceService;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
+use OpenSpout\Reader\XLSX\Reader;
+use Tests\Support\SipreskaTestHelpers;
+use Tests\TestCase;
+
+class AttendanceNikNipSplitTest extends TestCase
+{
+    use SipreskaTestHelpers;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->seedSipreskaBasics();
+        Storage::fake('sipreska');
+    }
+
+    private function openForm(Activity $activity, array $overrides = []): AttendanceForm
+    {
+        return AttendanceForm::query()->create(array_merge([
+            'activity_id' => $activity->id,
+            'public_token' => bin2hex(random_bytes(32)),
+            'is_open' => true,
+            'signature_required' => false,
+        ], $overrides));
+    }
+
+    private function createActivity(): Activity
+    {
+        return Activity::factory()->create([
+            'unit_id' => $this->unitBySlug('d3-kebidanan')->id,
+            'category_id' => $this->defaultCategory()->id,
+            'title' => 'Workshop NIK NIP',
+            'location' => 'Aula',
+        ]);
+    }
+
+    /** @param array<string, mixed> $overrides */
+    private function payload(array $overrides = []): array
+    {
+        return array_merge([
+            'name' => 'Andi Wijaya',
+            'position' => 'Staff',
+            'work_unit' => AttendanceWorkUnit::D3Kebidanan->value,
+        ], $overrides);
+    }
+
+    private function submit(AttendanceForm $form, array $overrides = []): \Illuminate\Testing\TestResponse
+    {
+        return $this->post(route('attendance.public.store', ['public_token' => $form->public_token]), $this->payload($overrides));
+    }
+
+    public function test_public_form_displays_nik_field(): void
+    {
+        $form = $this->openForm($this->createActivity());
+
+        $this->get(route('attendance.public.show', ['public_token' => $form->public_token]))
+            ->assertOk()
+            ->assertSee('NIK', false)
+            ->assertSee('Opsional. Isi jika Anda memiliki NIK.', false);
+    }
+
+    public function test_public_form_displays_nip_field(): void
+    {
+        $form = $this->openForm($this->createActivity());
+
+        $this->get(route('attendance.public.show', ['public_token' => $form->public_token]))
+            ->assertOk()
+            ->assertSee('NIP', false)
+            ->assertSee('Opsional. Isi jika Anda memiliki NIP.', false);
+    }
+
+    public function test_nik_is_not_required(): void
+    {
+        $form = $this->openForm($this->createActivity());
+
+        $this->submit($form, ['nip' => '198001012020031001'])
+            ->assertRedirect(route('attendance.public.success', ['public_token' => $form->public_token]));
+    }
+
+    public function test_nip_is_not_required(): void
+    {
+        $form = $this->openForm($this->createActivity());
+
+        $this->submit($form, ['nik' => '3201010101010001'])
+            ->assertRedirect(route('attendance.public.success', ['public_token' => $form->public_token]));
+    }
+
+    public function test_both_nik_and_nip_can_be_empty(): void
+    {
+        $form = $this->openForm($this->createActivity());
+
+        $this->submit($form)
+            ->assertRedirect(route('attendance.public.success', ['public_token' => $form->public_token]));
+
+        $this->assertDatabaseHas('attendance_responses', [
+            'attendance_form_id' => $form->id,
+            'nik' => null,
+            'nip' => null,
+        ]);
+    }
+
+    public function test_only_nik_can_be_submitted(): void
+    {
+        $form = $this->openForm($this->createActivity());
+
+        $this->submit($form, ['nik' => '3201.0101-0101.0001'])
+            ->assertRedirect(route('attendance.public.success', ['public_token' => $form->public_token]));
+
+        $this->assertDatabaseHas('attendance_responses', [
+            'attendance_form_id' => $form->id,
+            'nik' => '3201.0101-0101.0001',
+            'nip' => null,
+        ]);
+    }
+
+    public function test_only_nip_can_be_submitted(): void
+    {
+        $form = $this->openForm($this->createActivity());
+
+        $this->submit($form, ['nip' => '198001012020031001'])
+            ->assertRedirect(route('attendance.public.success', ['public_token' => $form->public_token]));
+
+        $this->assertDatabaseHas('attendance_responses', [
+            'attendance_form_id' => $form->id,
+            'nip' => '198001012020031001',
+            'nik' => null,
+        ]);
+    }
+
+    public function test_both_nik_and_nip_can_be_submitted(): void
+    {
+        $form = $this->openForm($this->createActivity());
+
+        $this->submit($form, [
+            'nik' => '3201010101010001',
+            'nip' => '198001012020031001',
+        ])->assertRedirect(route('attendance.public.success', ['public_token' => $form->public_token]));
+
+        $this->assertDatabaseHas('attendance_responses', [
+            'attendance_form_id' => $form->id,
+            'nik' => '3201010101010001',
+            'nip' => '198001012020031001',
+        ]);
+    }
+
+    public function test_empty_strings_are_stored_as_null(): void
+    {
+        $form = $this->openForm($this->createActivity());
+
+        $this->submit($form, ['nik' => '', 'nip' => '   '])
+            ->assertRedirect(route('attendance.public.success', ['public_token' => $form->public_token]));
+
+        $response = AttendanceResponse::query()->where('attendance_form_id', $form->id)->first();
+        $this->assertNull($response?->nik);
+        $this->assertNull($response?->nip);
+        $this->assertNull($response?->nik_normalized);
+        $this->assertNull($response?->nip_normalized);
+    }
+
+    public function test_nik_is_normalized(): void
+    {
+        $form = $this->openForm($this->createActivity());
+
+        $this->submit($form, ['nik' => '3201.0101-0101.0001']);
+
+        $this->assertDatabaseHas('attendance_responses', [
+            'attendance_form_id' => $form->id,
+            'nik_normalized' => '3201010101010001',
+        ]);
+    }
+
+    public function test_nip_is_normalized(): void
+    {
+        $form = $this->openForm($this->createActivity());
+
+        $this->submit($form, ['nip' => '1980.0101.2020.03.1001']);
+
+        $this->assertDatabaseHas('attendance_responses', [
+            'attendance_form_id' => $form->id,
+            'nip_normalized' => '198001012020031001',
+        ]);
+    }
+
+    public function test_duplicate_nik_is_rejected(): void
+    {
+        $form = $this->openForm($this->createActivity());
+
+        $this->submit($form, ['nik' => '3201010101010001', 'name' => 'Peserta A']);
+        $this->submit($form, ['nik' => '3201.0101-0101.0001', 'name' => 'Peserta B'])
+            ->assertRedirect(route('attendance.public.show', ['public_token' => $form->public_token]))
+            ->assertSessionHas('attendance_duplicate', true);
+
+        $this->assertSame(1, AttendanceResponse::query()->where('attendance_form_id', $form->id)->count());
+    }
+
+    public function test_duplicate_nip_is_rejected(): void
+    {
+        $form = $this->openForm($this->createActivity());
+
+        $this->submit($form, ['nip' => '198001012020031001', 'name' => 'Peserta A']);
+        $this->submit($form, ['nip' => '1980.0101.2020.03.1001', 'name' => 'Peserta B'])
+            ->assertRedirect(route('attendance.public.show', ['public_token' => $form->public_token]))
+            ->assertSessionHas('attendance_duplicate', true);
+    }
+
+    public function test_same_nik_on_different_activities_is_allowed(): void
+    {
+        $formA = $this->openForm($this->createActivity());
+        $formB = $this->openForm(Activity::factory()->create([
+            'unit_id' => $this->unitBySlug('d3-kebidanan')->id,
+            'category_id' => $this->defaultCategory()->id,
+        ]));
+
+        $this->submit($formA, ['nik' => '3201010101010001']);
+        $this->submit($formB, ['nik' => '3201010101010001'])
+            ->assertRedirect(route('attendance.public.success', ['public_token' => $formB->public_token]));
+
+        $this->assertSame(2, AttendanceResponse::query()->count());
+    }
+
+    public function test_same_nip_on_different_activities_is_allowed(): void
+    {
+        $formA = $this->openForm($this->createActivity());
+        $formB = $this->openForm(Activity::factory()->create([
+            'unit_id' => $this->unitBySlug('d3-kebidanan')->id,
+            'category_id' => $this->defaultCategory()->id,
+        ]));
+
+        $this->submit($formA, ['nip' => '198001012020031001']);
+        $this->submit($formB, ['nip' => '198001012020031001'])
+            ->assertRedirect(route('attendance.public.success', ['public_token' => $formB->public_token]));
+    }
+
+    public function test_legacy_data_still_displays_in_admin(): void
+    {
+        $admin = $this->adminUnit('d3-kebidanan');
+        $activity = $this->createActivity();
+        $form = $this->openForm($activity);
+
+        AttendanceResponse::query()->create([
+            'attendance_form_id' => $form->id,
+            'name' => 'Legacy Peserta',
+            'nip_nik' => '1234567890123456',
+            'nip_nik_normalized' => '1234567890123456',
+            'work_unit' => AttendanceWorkUnit::D3Kebidanan->value,
+            'signature_disk' => 'sipreska',
+            'signature_path' => 'sig.png',
+            'submitted_at' => now(),
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('activities.daftar-hadir.responses', $activity))
+            ->assertOk()
+            ->assertSee('Legacy Peserta', false)
+            ->assertSee('1234567890123456', false)
+            ->assertSee('Data legacy', false);
+    }
+
+    public function test_export_has_nik_and_nip_columns(): void
+    {
+        $admin = $this->adminUnit('d3-kebidanan');
+        $activity = $this->createActivity();
+        $form = $this->openForm($activity);
+
+        AttendanceResponse::query()->create([
+            'attendance_form_id' => $form->id,
+            'name' => 'Export Row',
+            'nik' => '3201010101010001',
+            'nik_normalized' => '3201010101010001',
+            'nip' => '198001012020031001',
+            'nip_normalized' => '198001012020031001',
+            'work_unit' => AttendanceWorkUnit::D3Kebidanan->value,
+            'signature_disk' => 'sipreska',
+            'signature_path' => 'sig.png',
+            'submitted_at' => now(),
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get(route('activities.daftar-hadir.export-excel', $activity));
+
+        $response->assertOk();
+
+        $path = tempnam(sys_get_temp_dir(), 'attendance-export-').'.xlsx';
+        file_put_contents($path, $response->streamedContent());
+
+        $reader = new Reader;
+        $reader->open($path);
+
+        $headers = [];
+        foreach ($reader->getSheetIterator() as $sheet) {
+            foreach ($sheet->getRowIterator() as $rowIndex => $row) {
+                if ($rowIndex === 1) {
+                    $headers = array_map(fn ($cell) => $cell->getValue(), $row->getCells());
+                }
+            }
+        }
+
+        $reader->close();
+        @unlink($path);
+
+        $this->assertContains('NIK', $headers);
+        $this->assertContains('NIP', $headers);
+        $this->assertContains('Identitas Lama', $headers);
+    }
+
+    public function test_export_preserves_leading_zeros_as_text(): void
+    {
+        $admin = $this->adminUnit('d3-kebidanan');
+        $activity = $this->createActivity();
+        $form = $this->openForm($activity);
+
+        AttendanceResponse::query()->create([
+            'attendance_form_id' => $form->id,
+            'name' => 'Leading Zero',
+            'nip' => '001234567890',
+            'nip_normalized' => '001234567890',
+            'work_unit' => AttendanceWorkUnit::D3Kebidanan->value,
+            'signature_disk' => 'sipreska',
+            'signature_path' => 'sig.png',
+            'submitted_at' => now(),
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get(route('activities.daftar-hadir.export-excel', $activity));
+
+        $path = tempnam(sys_get_temp_dir(), 'attendance-export-').'.xlsx';
+        file_put_contents($path, $response->streamedContent());
+
+        $reader = new Reader;
+        $reader->open($path);
+
+        $nipValue = null;
+        foreach ($reader->getSheetIterator() as $sheet) {
+            foreach ($sheet->getRowIterator() as $rowIndex => $row) {
+                if ($rowIndex === 2) {
+                    $cells = $row->getCells();
+                    $nipValue = $cells[3]->getValue();
+                }
+            }
+        }
+
+        $reader->close();
+        @unlink($path);
+
+        $this->assertSame('001234567890', $nipValue);
+    }
+
+    public function test_admin_unit_only_sees_own_activity_responses(): void
+    {
+        $admin = $this->adminUnit('d3-kebidanan');
+        $otherAdmin = $this->adminUnit('d3-keperawatan');
+
+        $activity = $this->createActivity();
+        $form = $this->openForm($activity);
+        $this->submit($form, ['name' => 'Unit Scoped']);
+
+        $this->actingAs($admin)
+            ->get(route('activities.daftar-hadir.responses', $activity))
+            ->assertOk()
+            ->assertSee('Unit Scoped', false);
+
+        $this->actingAs($otherAdmin)
+            ->get(route('activities.daftar-hadir.responses', $activity))
+            ->assertForbidden();
+    }
+
+    public function test_guest_cannot_view_admin_responses(): void
+    {
+        $activity = $this->createActivity();
+        $this->openForm($activity);
+
+        $this->get(route('activities.daftar-hadir.responses', $activity))
+            ->assertRedirect(route('login'));
+    }
+
+    public function test_nik_and_nip_are_not_logged_in_audit(): void
+    {
+        $form = $this->openForm($this->createActivity());
+
+        $this->submit($form, [
+            'nik' => '3201010101010001',
+            'nip' => '198001012020031001',
+        ]);
+
+        $log = ActivityLog::query()->where('action', 'attendance_submitted')->latest('id')->first();
+        $payload = json_encode($log?->new_values ?? []);
+
+        $this->assertNotNull($log);
+        $this->assertStringNotContainsString('3201010101010001', (string) $payload);
+        $this->assertStringNotContainsString('198001012020031001', (string) $payload);
+        $this->assertTrue($log->new_values['has_nik'] ?? false);
+        $this->assertTrue($log->new_values['has_nip'] ?? false);
+    }
+
+    public function test_success_page_does_not_show_full_nik_or_nip(): void
+    {
+        $form = $this->openForm($this->createActivity());
+
+        $this->submit($form, [
+            'nik' => '3201010101010001',
+            'nip' => '198001012020031001',
+        ]);
+
+        $this->get(route('attendance.public.success', ['public_token' => $form->public_token]))
+            ->assertOk()
+            ->assertSee('************0001', false)
+            ->assertDontSee('3201010101010001', false)
+            ->assertDontSee('198001012020031001', false);
+    }
+
+    public function test_normalize_identity_service(): void
+    {
+        $service = app(AttendanceService::class);
+
+        $this->assertSame('3201010101010001', $service->normalizeIdentity('3201.0101-0101.0001'));
+        $this->assertSame('001234567890', $service->normalizeIdentity('001234567890'));
+        $this->assertNull($service->normalizeIdentity(''));
+        $this->assertNull($service->normalizeIdentity('   '));
+    }
+
+    public function test_invalid_nik_format_is_rejected(): void
+    {
+        $form = $this->openForm($this->createActivity());
+
+        $this->submit($form, ['nik' => 'ABC-INVALID'])
+            ->assertSessionHasErrors('nik');
+    }
+
+    public function test_invalid_nip_format_is_rejected(): void
+    {
+        $form = $this->openForm($this->createActivity());
+
+        $this->submit($form, ['nip' => 'NOT-A-NIP'])
+            ->assertSessionHasErrors('nip');
+    }
+
+    public function test_route_cache_succeeds(): void
+    {
+        Artisan::call('route:cache');
+        $this->assertTrue(Route::has('attendance.public.store'));
+        Artisan::call('route:clear');
+    }
+
+    public function test_view_cache_succeeds(): void
+    {
+        Artisan::call('view:cache');
+        $this->assertFileExists(storage_path('framework/views'));
+        Artisan::call('view:clear');
+    }
+}

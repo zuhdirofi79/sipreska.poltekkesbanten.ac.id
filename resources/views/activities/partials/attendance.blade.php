@@ -232,6 +232,144 @@
                 </div>
             </div>
         </div>
+
+        @php
+            $activitySlug = \Illuminate\Support\Str::slug($activity->title) ?: 'kegiatan';
+            $qrDownloadUrl = route('activities.daftar-hadir.qr', $activity).'?size=1024';
+        @endphp
+
+        <div
+            class="mb-4 rounded-xl border border-violet-100 bg-violet-50/60 p-4 md:p-5"
+            data-attendance-qr-panel
+            data-public-url="{{ $publicUrl }}"
+            data-qr-preview-url="{{ $qrImageUrl }}"
+            data-qr-download-url="{{ $qrDownloadUrl }}"
+            data-whatsapp-url="{{ $whatsappUrl }}"
+            x-data="attendanceQrPanel(@js([
+                'publicUrl' => $publicUrl,
+                'activityTitle' => $activity->title,
+                'activitySlug' => $activitySlug,
+                'qrPreviewUrl' => $qrImageUrl,
+                'qrDownloadUrl' => $qrDownloadUrl,
+                'whatsappUrl' => $whatsappUrl,
+            ]))"
+        >
+            <div>
+                <h3 class="text-base font-semibold text-violet-950">QR Code Daftar Hadir</h3>
+                <p class="mt-1 text-sm text-violet-900">
+                    Gunakan QR Code berikut untuk memudahkan peserta membuka Form Absensi.
+                </p>
+            </div>
+
+            <p class="mt-3 text-sm text-violet-800">
+                QR Code dapat diunduh dan digunakan pada banner, spanduk, standing banner, poster, Canva, PowerPoint, atau slide presentasi.
+            </p>
+
+            <div class="mt-5 flex justify-center">
+                <div
+                    class="flex min-h-[300px] min-w-[300px] items-center justify-center rounded-xl border border-violet-100 bg-white p-4"
+                    aria-live="polite"
+                >
+                    <template x-if="!qrGenerated">
+                        <div class="max-w-xs text-center text-sm text-violet-700">
+                            <svg class="mx-auto mb-3 h-12 w-12 text-violet-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z" />
+                            </svg>
+                            <p>Klik <strong>Generate QR</strong> untuk menampilkan kode yang dapat discan peserta.</p>
+                        </div>
+                    </template>
+                    <img
+                        x-show="qrGenerated"
+                        x-cloak
+                        :src="qrPreviewSrc"
+                        alt="QR Code daftar hadir {{ $activity->title }}"
+                        class="h-[300px] w-[300px] max-w-full object-contain"
+                        width="300"
+                        height="300"
+                    >
+                </div>
+            </div>
+
+            <div class="mt-5 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                <button
+                    type="button"
+                    class="sipreska-btn-primary w-full sm:w-auto"
+                    @click="generateQr()"
+                    aria-label="Generate QR Code daftar hadir"
+                >
+                    Generate QR
+                </button>
+
+                <button
+                    type="button"
+                    class="sipreska-btn-secondary w-full sm:w-auto"
+                    :disabled="!qrGenerated"
+                    :class="{ 'pointer-events-none opacity-50': !qrGenerated }"
+                    @click="downloadQr()"
+                    aria-label="Download QR Code daftar hadir"
+                >
+                    Download QR
+                </button>
+
+                <button
+                    type="button"
+                    class="sipreska-btn-secondary w-full sm:w-auto"
+                    :disabled="!qrGenerated"
+                    :class="{ 'pointer-events-none opacity-50': !qrGenerated }"
+                    @click="shareQr()"
+                    aria-label="Bagikan QR Code daftar hadir"
+                >
+                    Share QR
+                </button>
+            </div>
+
+            <p class="mt-3 text-xs text-violet-700" x-show="qrGenerated" x-cloak>
+                QR Code mengarah ke tautan publik absensi yang sama dengan field Tautan Publik Absensi di atas.
+            </p>
+
+            <div
+                x-show="shareModalOpen"
+                x-cloak
+                x-transition.opacity
+                class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+                @keydown.escape.window="closeShareModal()"
+            >
+                <div
+                    x-show="shareModalOpen"
+                    x-transition
+                    @click.outside="closeShareModal()"
+                    class="sipreska-card w-full max-w-md p-6"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="qr-share-modal-title"
+                >
+                    <h4 id="qr-share-modal-title" class="text-base font-semibold text-gray-900">Bagikan QR Code</h4>
+                    <p class="mt-1 text-sm text-gray-500">Browser Anda tidak mendukung Web Share API. Pilih opsi berikut:</p>
+
+                    <div class="mt-6 flex flex-col gap-2">
+                        <button type="button" class="sipreska-btn-primary w-full" @click="downloadQr(); closeShareModal();">
+                            Download PNG
+                        </button>
+                        <button type="button" class="sipreska-btn-secondary w-full" @click="copyLink()">
+                            Salin Link
+                        </button>
+                        <a
+                            href="{{ $whatsappUrl }}"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="sipreska-btn-secondary w-full text-center"
+                            @click="closeShareModal()"
+                        >
+                            Bagikan WhatsApp
+                        </a>
+                        <button type="button" class="sipreska-btn-secondary w-full" @click="closeShareModal()">
+                            Tutup
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
         @else
             <div class="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
                 Tautan absensi belum dapat dibuat. Hubungi administrator.

@@ -176,24 +176,28 @@ class AttendanceResponseIndexTest extends TestCase
             ->assertDontSee('Citra Dewi');
     }
 
-    public function test_search_by_nip_nik_works(): void
+    public function test_search_by_nik_nip_and_legacy_identity_works(): void
     {
         [$admin, $activity, $form] = $this->activityWithForm();
         $this->createResponse($form, [
-            'name' => 'Target NIP',
-            'nip_nik' => '5555666677778888',
-            'nip_nik_normalized' => '5555666677778888',
+            'name' => 'Target NIK',
+            'nik' => '5555666677778888',
+            'nik_normalized' => '5555666677778888',
+            'nip_nik' => null,
+            'nip_nik_normalized' => null,
         ]);
         $this->createResponse($form, [
             'name' => 'Other Person',
-            'nip_nik' => '9999888877776666',
-            'nip_nik_normalized' => '9999888877776666',
+            'nip' => '9999888877776666',
+            'nip_normalized' => '9999888877776666',
+            'nip_nik' => null,
+            'nip_nik_normalized' => null,
         ]);
 
         $this->actingAs($admin)
             ->get(route('activities.daftar-hadir.responses', ['activity' => $activity, 'search' => '5555666677778888']))
             ->assertOk()
-            ->assertSee('Target NIP')
+            ->assertSee('Target NIK')
             ->assertDontSee('Other Person');
     }
 

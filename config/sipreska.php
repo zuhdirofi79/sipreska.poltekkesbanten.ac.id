@@ -12,6 +12,8 @@ return [
     */
     'logo_path' => 'images/logo-poltekkes-banten.png',
 
+    'attendance_letterhead_path' => 'images/daftar-hadir-header.jpeg',
+
     /*
     |--------------------------------------------------------------------------
     | Legacy Filament Emergency Access

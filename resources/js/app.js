@@ -400,6 +400,151 @@ document.addEventListener('alpine:init', () => {
         },
     }));
 
+    Alpine.data('attendanceQrPanel', (config = {}) => ({
+        publicUrl: config.publicUrl ?? '',
+        activityTitle: config.activityTitle ?? '',
+        activitySlug: config.activitySlug ?? 'kegiatan',
+        qrPreviewUrl: config.qrPreviewUrl ?? '',
+        qrDownloadUrl: config.qrDownloadUrl ?? '',
+        whatsappUrl: config.whatsappUrl ?? '',
+
+        qrGenerated: false,
+        qrPreviewSrc: '',
+        shareModalOpen: false,
+        copied: false,
+        copyResetTimer: null,
+
+        get downloadFilename() {
+            return `qr-daftar-hadir-${this.activitySlug}.png`;
+        },
+
+        init() {
+            this.$watch('shareModalOpen', (open) => {
+                document.body.classList.toggle('overflow-hidden', open);
+            });
+        },
+
+        generateQr() {
+            const cacheBuster = Date.now();
+            const separator = this.qrPreviewUrl.includes('?') ? '&' : '?';
+            this.qrPreviewSrc = `${this.qrPreviewUrl}${separator}t=${cacheBuster}`;
+            this.qrGenerated = true;
+        },
+
+        async downloadQr() {
+            if (!this.qrGenerated) {
+                return;
+            }
+
+            try {
+                const response = await fetch(this.qrDownloadUrl, {
+                    credentials: 'same-origin',
+                });
+
+                if (!response.ok) {
+                    throw new Error('download failed');
+                }
+
+                const blob = await response.blob();
+                const objectUrl = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = objectUrl;
+                link.download = this.downloadFilename;
+                link.rel = 'noopener';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(objectUrl);
+            } catch {
+                const link = document.createElement('a');
+                link.href = this.qrDownloadUrl;
+                link.download = this.downloadFilename;
+                link.rel = 'noopener';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        },
+
+        async shareQr() {
+            if (!this.qrGenerated) {
+                return;
+            }
+
+            try {
+                const response = await fetch(this.qrDownloadUrl, {
+                    credentials: 'same-origin',
+                });
+
+                if (!response.ok) {
+                    throw new Error('share fetch failed');
+                }
+
+                const blob = await response.blob();
+                const file = new File([blob], this.downloadFilename, { type: 'image/png' });
+
+                if (navigator.share && navigator.canShare?.({ files: [file] })) {
+                    await navigator.share({
+                        files: [file],
+                        title: `QR Daftar Hadir - ${this.activityTitle}`,
+                        text: `Scan QR Code untuk mengisi daftar hadir: ${this.publicUrl}`,
+                    });
+
+                    return;
+                }
+            } catch (error) {
+                if (error?.name === 'AbortError') {
+                    return;
+                }
+            }
+
+            this.shareModalOpen = true;
+        },
+
+        closeShareModal() {
+            this.shareModalOpen = false;
+        },
+
+        async copyLink() {
+            const copied = await this.copyText(this.publicUrl);
+
+            if (copied) {
+                this.copied = true;
+                clearTimeout(this.copyResetTimer);
+                this.copyResetTimer = setTimeout(() => {
+                    this.copied = false;
+                }, 2500);
+            }
+        },
+
+        async copyText(text) {
+            if (navigator.clipboard && window.isSecureContext) {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    return true;
+                } catch {
+                    // fall through
+                }
+            }
+
+            try {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.setAttribute('readonly', '');
+                textarea.style.position = 'fixed';
+                textarea.style.left = '-9999px';
+                document.body.appendChild(textarea);
+                textarea.select();
+                const ok = document.execCommand('copy');
+                document.body.removeChild(textarea);
+
+                return ok;
+            } catch {
+                return false;
+            }
+        },
+    }));
+
     Alpine.data('attendanceResponsesPoll', (config = {}) => ({
         stats: {
             total: config.initialTotal ?? 0,

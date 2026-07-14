@@ -5,9 +5,11 @@ namespace App\Services;
 use App\Enums\AttendanceWorkUnit;
 use App\Models\Activity;
 use App\Models\AttendanceForm;
+use App\Models\AttendanceResponse;
 use App\Support\DateTimeFormatter;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Response;
+use OpenSpout\Common\Entity\Cell;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Common\Entity\Style\Style;
 use OpenSpout\Writer\XLSX\Writer;
@@ -33,27 +35,41 @@ class AttendanceExportService
             $writer->openToFile('php://output');
 
             $headerStyle = (new Style)->setFontBold();
+            $textStyle = (new Style)->setFormat('@');
+
             $writer->addRow(Row::fromValues([
                 'No',
                 'Nama',
-                'NIP/NIK',
+                'NIK',
+                'NIP',
+                'Identitas Lama',
                 'Jabatan',
                 'Unit Kerja',
                 'Instansi',
                 'Waktu Submit',
+                'Judul Kegiatan',
+                'Tanggal Kegiatan',
+                'Tempat',
+                'Unit Penyelenggara',
             ], $headerStyle));
 
             foreach ($responses as $index => $response) {
                 $workUnit = AttendanceWorkUnit::tryFrom($response->work_unit);
 
-                $writer->addRow(Row::fromValues([
-                    $index + 1,
-                    $response->name,
-                    $response->nip_nik,
-                    $response->position ?? '-',
-                    $workUnit?->label() ?? $response->work_unit,
-                    $response->institution_name ?? '-',
-                    DateTimeFormatter::display($response->submitted_at),
+                $writer->addRow(new Row([
+                    Cell::fromValue($index + 1),
+                    Cell::fromValue($response->name),
+                    Cell::fromValue($this->excelText($response->nik), $textStyle),
+                    Cell::fromValue($this->excelText($response->nip), $textStyle),
+                    Cell::fromValue($this->excelText($response->legacyIdentity()), $textStyle),
+                    Cell::fromValue($response->position ?? '-'),
+                    Cell::fromValue($workUnit?->label() ?? $response->work_unit),
+                    Cell::fromValue($response->institution_name ?? '-'),
+                    Cell::fromValue(DateTimeFormatter::display($response->submitted_at)),
+                    Cell::fromValue($activity->title),
+                    Cell::fromValue($activity->activity_date?->format('Y-m-d') ?? '-'),
+                    Cell::fromValue($activity->location ?? '-'),
+                    Cell::fromValue($activity->unit?->short_name ?? '-'),
                 ]));
             }
 
@@ -79,6 +95,11 @@ class AttendanceExportService
         ])->setPaper('a4', 'landscape');
 
         return $pdf->download($filename);
+    }
+
+    private function excelText(?string $value): string
+    {
+        return $value ?? '-';
     }
 
     private function buildFilename(Activity $activity, string $extension): string

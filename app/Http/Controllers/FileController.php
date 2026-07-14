@@ -98,7 +98,7 @@ class FileController extends Controller
             $response->signature_disk,
             $response->signature_path,
             'image/png',
-            'signature-'.$response->nip_nik.'.png',
+            'signature-'.$response->id.'.png',
         ];
     }
 }

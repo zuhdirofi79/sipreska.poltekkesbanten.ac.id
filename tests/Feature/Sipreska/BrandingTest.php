@@ -46,7 +46,7 @@ class BrandingTest extends TestCase
         $response->assertSee('sipreska-logo-header', false);
     }
 
-    public function test_public_attendance_page_renders_logo(): void
+    public function test_public_attendance_page_renders_letterhead_not_small_logo(): void
     {
         $activity = Activity::factory()->create([
             'unit_id' => $this->unitBySlug('d3-kebidanan')->id,
@@ -63,8 +63,10 @@ class BrandingTest extends TestCase
         $response = $this->get(route('attendance.public.show', ['public_token' => $form->public_token]));
 
         $response->assertOk();
-        $response->assertSee(SipreskaBranding::logoUrl(), false);
-        $response->assertSee('sipreska-logo-login', false);
-        $response->assertSee('SIPRESKA', false);
+        $response->assertSee(asset('images/daftar-hadir-header.jpeg'), false);
+        $response->assertSee('attendance-letterhead', false);
+        $response->assertSee('Form Daftar Hadir Kegiatan', false);
+        $response->assertDontSee('sipreska-logo-login', false);
+        $response->assertDontSee(SipreskaBranding::logoUrl(), false);
     }
 }

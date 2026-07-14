@@ -60,17 +60,26 @@ class PublicAttendanceController extends Controller
 
         $attendanceForm->loadMissing('activity');
 
+        $successData = [
+            'name' => $response->name,
+            'activity_title' => $attendanceForm->activity->title,
+            'activity_date' => $attendanceForm->activity->activity_date?->toDateString(),
+            'location' => $attendanceForm->activity->location,
+            'submitted_at' => $response->submitted_at?->toIso8601String(),
+            'reference_code' => AttendanceConfirmation::referenceCode($response),
+        ];
+
+        if ($response->masked_nik !== null) {
+            $successData['nik_masked'] = $response->masked_nik;
+        }
+
+        if ($response->masked_nip !== null) {
+            $successData['nip_masked'] = $response->masked_nip;
+        }
+
         return redirect()
             ->route('attendance.public.success', ['public_token' => $attendanceForm->public_token])
-            ->with('attendance_success', [
-                'name' => $response->name,
-                'nip_nik_masked' => AttendanceConfirmation::maskNipNik($response->nip_nik),
-                'activity_title' => $attendanceForm->activity->title,
-                'activity_date' => $attendanceForm->activity->activity_date?->toDateString(),
-                'location' => $attendanceForm->activity->location,
-                'submitted_at' => $response->submitted_at?->toIso8601String(),
-                'reference_code' => AttendanceConfirmation::referenceCode($response),
-            ]);
+            ->with('attendance_success', $successData);
     }
 
     public function success(string $public_token): View
@@ -89,7 +98,9 @@ class PublicAttendanceController extends Controller
 
     private function isDuplicateSubmissionError(RuntimeException $exception): bool
     {
-        return str_contains($exception->getMessage(), 'sudah terdaftar');
+        $message = $exception->getMessage();
+
+        return str_contains($message, 'sudah tercatat untuk kegiatan ini');
     }
 
     private function isUniqueConstraintViolation(QueryException $exception): bool

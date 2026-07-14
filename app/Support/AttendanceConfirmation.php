@@ -25,9 +25,13 @@ class AttendanceConfirmation
         return strtoupper(substr($hash, 0, 8));
     }
 
-    public static function maskNipNik(string $nipNik): string
+    public static function maskIdentity(?string $value): string
     {
-        $digits = preg_replace('/\D+/', '', $nipNik) ?? '';
+        if ($value === null || $value === '') {
+            return '—';
+        }
+
+        $digits = preg_replace('/\D+/', '', $value) ?? '';
 
         if ($digits === '') {
             return '—';
@@ -38,5 +42,11 @@ class AttendanceConfirmation
         }
 
         return str_repeat('*', strlen($digits) - 4).substr($digits, -4);
+    }
+
+    /** @deprecated Use maskIdentity() instead. Kept for backward compatibility. */
+    public static function maskNipNik(string $nipNik): string
+    {
+        return self::maskIdentity($nipNik);
     }
 }

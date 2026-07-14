@@ -10,6 +10,16 @@ use Illuminate\Support\Facades\Auth;
 class AuditLogService
 {
     /** @var list<string> */
+    private const SENSITIVE_EXACT_KEYS = [
+        'nik',
+        'nip',
+        'nik_normalized',
+        'nip_normalized',
+        'nip_nik',
+        'nip_nik_normalized',
+    ];
+
+    /** @var list<string> */
     private const SENSITIVE_KEYS = [
         'password',
         'password_confirmation',
@@ -75,6 +85,10 @@ class AuditLogService
     private function isSensitiveKey(string $key): bool
     {
         $normalized = strtolower($key);
+
+        if (in_array($normalized, self::SENSITIVE_EXACT_KEYS, true)) {
+            return true;
+        }
 
         foreach (self::SENSITIVE_KEYS as $sensitive) {
             if (str_contains($normalized, $sensitive)) {

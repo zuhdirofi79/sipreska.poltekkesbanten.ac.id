@@ -111,8 +111,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('attendance_form_id')->constrained('attendance_forms')->cascadeOnDelete();
             $table->string('name');
-            $table->string('nip_nik');
-            $table->string('nip_nik_normalized');
+            $table->string('nip_nik')->nullable();
+            $table->string('nip_nik_normalized')->nullable();
             $table->string('position')->nullable();
             $table->string('work_unit');
             $table->string('institution_name')->nullable();
