@@ -3,14 +3,20 @@ import Alpine from 'alpinejs';
 window.Alpine = Alpine;
 
 document.addEventListener('alpine:init', () => {
-    Alpine.data('signaturePad', (options = {}) => ({
+    const attendanceConfirmationFactory = (options = {}) => ({
         drawing: false,
         hasSignature: false,
-        submitting: false,
+        isSubmitting: false,
+        modalOpen: false,
+        signatureError: '',
         required: options.required ?? true,
         showInstitution: false,
 
         init() {
+            this.$watch('modalOpen', (open) => {
+                document.body.classList.toggle('overflow-hidden', open);
+            });
+
             this.$nextTick(() => {
                 const canvas = this.$refs.canvas;
                 if (!canvas) return;
@@ -23,6 +29,106 @@ document.addEventListener('alpine:init', () => {
                 this.ctx = ctx;
                 this.canvas = canvas;
             });
+        },
+
+        getForm() {
+            return this.$refs.form ?? this.$el;
+        },
+
+        validateSignature() {
+            if (!this.required || !this.$refs.canvas) {
+                this.signatureError = '';
+
+                return true;
+            }
+
+            if (!this.hasSignature) {
+                this.signatureError = 'Tanda tangan wajib diisi.';
+                this.$refs.canvas.focus();
+
+                return false;
+            }
+
+            this.signatureError = '';
+
+            return true;
+        },
+
+        requestOpenConfirm() {
+            if (this.isSubmitting) {
+                return;
+            }
+
+            const form = this.getForm();
+
+            if (!form.checkValidity()) {
+                form.reportValidity();
+
+                return;
+            }
+
+            if (!this.validateSignature()) {
+                return;
+            }
+
+            this.modalOpen = true;
+            this.$nextTick(() => {
+                this.$refs.confirmYes?.focus();
+            });
+        },
+
+        closeModal() {
+            if (this.isSubmitting) {
+                return;
+            }
+
+            this.modalOpen = false;
+            this.$nextTick(() => {
+                this.$refs.submitTrigger?.focus();
+            });
+        },
+
+        handleEscape() {
+            if (this.isSubmitting || !this.modalOpen) {
+                return;
+            }
+
+            this.closeModal();
+        },
+
+        confirmSubmit() {
+            if (this.isSubmitting) {
+                return;
+            }
+
+            const form = this.getForm();
+
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                this.closeModal();
+
+                return;
+            }
+
+            if (!this.validateSignature()) {
+                this.closeModal();
+
+                return;
+            }
+
+            this.isSubmitting = true;
+
+            if (this.required && this.$refs.canvas && this.$refs.signatureInput) {
+                this.$refs.signatureInput.value = this.canvas.toDataURL('image/png');
+            }
+
+            form.requestSubmit(this.$refs.hiddenSubmit);
+        },
+
+        handleFormSubmit(event) {
+            if (!this.isSubmitting) {
+                event.preventDefault();
+            }
         },
 
         getPoint(event) {
@@ -52,6 +158,7 @@ document.addEventListener('alpine:init', () => {
             this.ctx.lineTo(point.x, point.y);
             this.ctx.stroke();
             this.hasSignature = true;
+            this.signatureError = '';
         },
 
         endDraw() {
@@ -67,27 +174,10 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
-        prepareSubmit(event) {
-            if (this.submitting) {
-                event.preventDefault();
+    });
 
-                return;
-            }
-
-            if (this.required && this.$refs.canvas) {
-                if (!this.hasSignature) {
-                    event.preventDefault();
-                    alert('Tanda tangan wajib diisi.');
-
-                    return;
-                }
-
-                this.$refs.signatureInput.value = this.canvas.toDataURL('image/png');
-            }
-
-            this.submitting = true;
-        },
-    }));
+    Alpine.data('attendanceConfirmation', attendanceConfirmationFactory);
+    Alpine.data('signaturePad', attendanceConfirmationFactory);
 
     Alpine.data('calendarView', (events = [], initialView = 'month') => ({
         events: events,

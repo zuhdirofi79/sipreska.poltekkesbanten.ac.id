@@ -38,10 +38,12 @@
                 <form
                     method="POST"
                     action="{{ route('attendance.public.store', ['public_token' => $attendanceForm->public_token]) }}"
-                    x-data="signaturePad({ required: {{ $attendanceForm->signature_required ? 'true' : 'false' }} })"
+                    x-ref="form"
+                    x-data="attendanceConfirmation({ required: {{ $attendanceForm->signature_required ? 'true' : 'false' }} })"
                     x-init="showInstitution = '{{ old('work_unit') }}' === '{{ \App\Enums\AttendanceWorkUnit::InstansiLainnya->value }}'"
-                    @submit="prepareSubmit($event)"
+                    @submit="handleFormSubmit($event)"
                     class="space-y-4"
+                    data-public-attendance-form
                 >
                     @csrf
 
@@ -104,18 +106,80 @@
                             </div>
                             <input type="hidden" name="signature_data" x-ref="signatureInput">
                             @error('signature_data')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                            <p x-show="signatureError" x-cloak class="mt-1 text-xs text-red-600" x-text="signatureError"></p>
                             <button type="button" class="mt-2 text-sm text-gray-500 hover:text-gray-700" @click="clear()">Hapus tanda tangan</button>
                         </div>
                     @endif
 
                     <button
-                        type="submit"
+                        type="button"
+                        x-ref="submitTrigger"
                         class="sipreska-btn-primary w-full"
-                        :disabled="submitting"
-                        x-text="submitting ? 'Mengirim...' : 'Kirim Presensi'"
+                        :disabled="isSubmitting"
+                        @click="requestOpenConfirm()"
+                        x-text="isSubmitting ? 'Menyimpan...' : 'Kirim Presensi'"
                     >
                         Kirim Presensi
                     </button>
+
+                    <button
+                        type="submit"
+                        x-ref="hiddenSubmit"
+                        class="hidden"
+                        tabindex="-1"
+                        aria-hidden="true"
+                        hidden
+                    ></button>
+
+                    <div
+                        x-show="modalOpen"
+                        x-cloak
+                        x-transition.opacity
+                        class="fixed inset-0 z-50 flex items-center justify-center p-4"
+                        style="background-color: rgba(0, 0, 0, 0.45);"
+                        @keydown.escape.window="handleEscape()"
+                        @click.self="!isSubmitting && closeModal()"
+                        data-attendance-confirm-modal
+                    >
+                        <div
+                            x-show="modalOpen"
+                            x-transition
+                            class="sipreska-card w-full p-6 shadow-lg"
+                            style="max-width: min(520px, calc(100% - 32px)); border-radius: 14px;"
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="attendance-confirm-title"
+                            aria-describedby="attendance-confirm-message"
+                            @click.stop
+                        >
+                            <h2 id="attendance-confirm-title" class="text-base font-semibold text-gray-900">
+                                Konfirmasi Simpan Presensi Kehadiran
+                            </h2>
+                            <p id="attendance-confirm-message" class="mt-2 text-sm text-gray-600">
+                                Apakah Anda yakin menyimpan Presensi Kehadiran Anda?
+                            </p>
+                            <div class="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-end">
+                                <button
+                                    type="button"
+                                    class="sipreska-btn-primary order-1 w-full sm:order-2 sm:w-auto"
+                                    x-ref="confirmYes"
+                                    :disabled="isSubmitting"
+                                    @click="confirmSubmit()"
+                                    x-text="isSubmitting ? 'Menyimpan...' : 'Ya, Simpan'"
+                                >
+                                    Ya, Simpan
+                                </button>
+                                <button
+                                    type="button"
+                                    class="sipreska-btn-secondary order-2 w-full sm:order-1 sm:w-auto"
+                                    :disabled="isSubmitting"
+                                    @click="closeModal()"
+                                >
+                                    Tidak, Kembali
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </form>
             @endif
         </div>
