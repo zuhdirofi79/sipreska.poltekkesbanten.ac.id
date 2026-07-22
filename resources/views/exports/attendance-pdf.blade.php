@@ -4,15 +4,17 @@
     <meta charset="utf-8">
     <title>Daftar Hadir - {{ $activity->title }}</title>
     <style>
-        body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #111; margin: 0; padding: 0; }
+        body { font-family: DejaVu Sans, sans-serif; font-size: 10px; color: #111; margin: 0; padding: 0; }
         h1 { font-size: 16px; margin: 0 0 8px; text-align: center; text-transform: uppercase; letter-spacing: 0.04em; }
-        .meta { margin-bottom: 16px; color: #444; }
+        .meta { margin-bottom: 16px; color: #444; font-size: 11px; }
         .meta div { margin-bottom: 2px; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; }
+        th, td { border: 1px solid #ccc; padding: 4px 5px; text-align: left; vertical-align: middle; }
         th { background: #f3f4f6; }
         .footer { margin-top: 12px; font-size: 10px; color: #666; }
         .legacy { font-size: 9px; color: #92400e; }
+        .signature-cell { width: 90px; text-align: center; }
+        .signature-img { height: 32px; max-width: 100px; width: auto; display: block; margin: 0 auto; }
         .public-attendance-letterhead-wrapper {
             width: 100%;
             max-width: none;
@@ -94,10 +96,14 @@
                 <th>Unit Kerja</th>
                 <th>Instansi</th>
                 <th>Waktu Submit</th>
+                <th class="signature-cell">Tanda Tangan</th>
             </tr>
         </thead>
         <tbody>
             @forelse ($responses as $index => $response)
+                @php
+                    $signatureSrc = \App\Support\AttendanceSignatureExport::pdfSrc($response);
+                @endphp
                 <tr>
                     <td>{{ $index + 1 }}</td>
                     <td>{{ $response->name }}</td>
@@ -115,10 +121,17 @@
                     <td>{{ \App\Enums\AttendanceWorkUnit::tryFrom($response->work_unit)?->label() ?? $response->work_unit }}</td>
                     <td>{{ $response->institution_name ?? '-' }}</td>
                     <td>{{ \App\Support\DateTimeFormatter::display($response->submitted_at) }}</td>
+                    <td class="signature-cell">
+                        @if ($signatureSrc)
+                            <img src="{{ $signatureSrc }}" alt="Tanda tangan {{ $response->name }}" class="signature-img">
+                        @else
+                            -
+                        @endif
+                    </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="9">Belum ada peserta.</td>
+                    <td colspan="10">Belum ada peserta.</td>
                 </tr>
             @endforelse
         </tbody>

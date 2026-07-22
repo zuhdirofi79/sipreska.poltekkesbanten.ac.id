@@ -91,6 +91,10 @@ class AttendanceQrPanelTest extends TestCase
             ->get(route('activities.daftar-hadir.qr', $activity).'?size=1024');
 
         $response->assertOk()->assertHeader('content-type', 'image/png');
+        $response->assertHeader(
+            'content-disposition',
+            'attachment; filename="qr-daftar-hadir-workshop-kesehatan-masyarakat.png"',
+        );
 
         $info = @getimagesizefromstring((string) $response->getContent());
 
@@ -98,6 +102,56 @@ class AttendanceQrPanelTest extends TestCase
         $this->assertSame(1024, $info[0]);
         $this->assertSame(1024, $info[1]);
         $this->assertSame(IMAGETYPE_PNG, $info[2]);
+    }
+
+    public function test_qr_png_has_centered_white_circle_badge_when_logo_exists(): void
+    {
+        $this->assertFileExists(public_path('images/logo-poltekkes-banten.png'));
+
+        [$admin, $activity] = $this->activityWithForm();
+
+        $response = $this->actingAs($admin)
+            ->get(route('activities.daftar-hadir.qr', $activity).'?size=1024');
+
+        $response->assertOk();
+
+        $image = @imagecreatefromstring((string) $response->getContent());
+        $this->assertNotFalse($image);
+
+        $isPureWhite = static function (int $color): bool {
+            return (($color >> 16) & 0xFF) === 255
+                && (($color >> 8) & 0xFF) === 255
+                && ($color & 0xFF) === 255;
+        };
+
+        // Circle ~27% of 1024 => diameter ~277, radius ~138. Ring outside logo artwork.
+        $this->assertTrue($isPureWhite(imagecolorat($image, 622, 512)));
+        $this->assertTrue($isPureWhite(imagecolorat($image, 512, 622)));
+        $this->assertTrue($isPureWhite(imagecolorat($image, 402, 512)));
+        $this->assertTrue($isPureWhite(imagecolorat($image, 512, 402)));
+
+        // Inside an equal square but outside the circle → must not be a solid white square badge.
+        $outsideCircleInsideSquare = [
+            [632, 632],
+            [392, 632],
+            [632, 392],
+            [392, 392],
+            [640, 620],
+            [384, 620],
+        ];
+        $whiteCount = 0;
+        foreach ($outsideCircleInsideSquare as [$x, $y]) {
+            if ($isPureWhite(imagecolorat($image, $x, $y))) {
+                $whiteCount++;
+            }
+        }
+        $this->assertLessThan(
+            count($outsideCircleInsideSquare),
+            $whiteCount,
+            'Badge must be a circle drawn by GD, not a filled white square.',
+        );
+
+        imagedestroy($image);
     }
 
     public function test_qr_uses_same_public_url_as_share_panel(): void

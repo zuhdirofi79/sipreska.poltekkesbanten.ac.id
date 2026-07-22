@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Enums\AttendanceWorkUnit;
 use App\Models\Activity;
 use App\Models\AttendanceForm;
-use App\Models\AttendanceResponse;
+use App\Support\AttendanceSignatureExport;
 use App\Support\DateTimeFormatter;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Response;
@@ -32,6 +32,8 @@ class AttendanceExportService
 
         return response()->streamDownload(function () use ($activity, $responses) {
             $writer = new Writer;
+            // OpenSpout has no image embed API; widen the text indicator column.
+            $writer->getOptions()->setColumnWidth(14, 10);
             $writer->openToFile('php://output');
 
             $headerStyle = (new Style)->setFontBold();
@@ -47,6 +49,7 @@ class AttendanceExportService
                 'Unit Kerja',
                 'Instansi',
                 'Waktu Submit',
+                'Tanda Tangan',
                 'Judul Kegiatan',
                 'Tanggal Kegiatan',
                 'Tempat',
@@ -66,6 +69,8 @@ class AttendanceExportService
                     Cell::fromValue($workUnit?->label() ?? $response->work_unit),
                     Cell::fromValue($response->institution_name ?? '-'),
                     Cell::fromValue(DateTimeFormatter::display($response->submitted_at)),
+                    // Text indicator only — OpenSpout cannot embed signature PNGs.
+                    Cell::fromValue(AttendanceSignatureExport::excelLabel($response)),
                     Cell::fromValue($activity->title),
                     Cell::fromValue($activity->activity_date?->format('Y-m-d') ?? '-'),
                     Cell::fromValue($activity->location ?? '-'),

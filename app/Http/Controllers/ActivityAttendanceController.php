@@ -16,6 +16,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -135,11 +136,19 @@ class ActivityAttendanceController extends Controller
 
         $form = $this->attendanceService->ensureForm($activity);
         $url = route('attendance.public.show', ['public_token' => $form->public_token]);
-        $forDownload = $request->integer('size') === 1024;
 
-        $png = AttendanceQrImage::generate($url, $forDownload);
+        $forDownload = $request->has('size');
+        $size = $forDownload ? $request->integer('size', 512) : null;
+        $png = AttendanceQrImage::generate($url, $forDownload, $size);
 
-        return response($png, 200, ['Content-Type' => 'image/png']);
+        $headers = ['Content-Type' => 'image/png'];
+
+        if ($forDownload) {
+            $slug = Str::slug($activity->title) ?: 'kegiatan';
+            $headers['Content-Disposition'] = 'attachment; filename="qr-daftar-hadir-'.$slug.'.png"';
+        }
+
+        return response($png, 200, $headers);
     }
 
     public function exportExcel(Activity $activity, AttendanceResponseFilterRequest $request): StreamedResponse

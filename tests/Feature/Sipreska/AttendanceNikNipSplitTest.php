@@ -314,6 +314,7 @@ class AttendanceNikNipSplitTest extends TestCase
         $this->assertContains('NIK', $headers);
         $this->assertContains('NIP', $headers);
         $this->assertContains('Identitas Lama', $headers);
+        $this->assertContains('Tanda Tangan', $headers);
     }
 
     public function test_export_preserves_leading_zeros_as_text(): void
