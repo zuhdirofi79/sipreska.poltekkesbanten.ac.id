@@ -70,6 +70,7 @@ class AttendanceLetterheadTest extends TestCase
 
         $this->post(route('attendance.public.store', ['public_token' => $form->public_token]), [
             'name' => 'Peserta Letterhead',
+            'nip' => '0',
             'work_unit' => AttendanceWorkUnit::D3Kebidanan->value,
         ])->assertRedirect(route('attendance.public.success', ['public_token' => $form->public_token]));
 
@@ -154,6 +155,7 @@ class AttendanceLetterheadTest extends TestCase
 
         $this->post(route('attendance.public.store', ['public_token' => $form->public_token]), [
             'name' => 'No Logo Success',
+            'nip' => '0',
             'work_unit' => AttendanceWorkUnit::D3Kebidanan->value,
         ]);
 

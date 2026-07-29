@@ -52,6 +52,7 @@ class AttendanceNikNipSplitTest extends TestCase
     {
         return array_merge([
             'name' => 'Andi Wijaya',
+            'nip' => '198001012020031001',
             'position' => 'Staff',
             'work_unit' => AttendanceWorkUnit::D3Kebidanan->value,
         ], $overrides);
@@ -79,7 +80,7 @@ class AttendanceNikNipSplitTest extends TestCase
         $this->get(route('attendance.public.show', ['public_token' => $form->public_token]))
             ->assertOk()
             ->assertSee('NIP', false)
-            ->assertSee('Opsional. Isi jika Anda memiliki NIP.', false);
+            ->assertSee('Wajib diisi. Jika tidak memiliki NIP, isi dengan 0 atau -.', false);
     }
 
     public function test_nik_is_not_required(): void
@@ -90,40 +91,48 @@ class AttendanceNikNipSplitTest extends TestCase
             ->assertRedirect(route('attendance.public.success', ['public_token' => $form->public_token]));
     }
 
-    public function test_nip_is_not_required(): void
+    public function test_nip_is_required(): void
     {
         $form = $this->openForm($this->createActivity());
 
-        $this->submit($form, ['nik' => '3201010101010001'])
-            ->assertRedirect(route('attendance.public.success', ['public_token' => $form->public_token]));
+        $this->submit($form, ['nip' => '', 'nik' => '3201010101010001'])
+            ->assertSessionHasErrors('nip');
     }
 
-    public function test_both_nik_and_nip_can_be_empty(): void
+    public function test_nip_zero_is_accepted(): void
     {
         $form = $this->openForm($this->createActivity());
 
-        $this->submit($form)
+        $this->submit($form, ['nip' => '0', 'nik' => ''])
             ->assertRedirect(route('attendance.public.success', ['public_token' => $form->public_token]));
 
         $this->assertDatabaseHas('attendance_responses', [
             'attendance_form_id' => $form->id,
+            'nip' => '0',
             'nik' => null,
-            'nip' => null,
         ]);
     }
 
-    public function test_only_nik_can_be_submitted(): void
+    public function test_nip_dash_is_accepted(): void
     {
         $form = $this->openForm($this->createActivity());
 
-        $this->submit($form, ['nik' => '3201.0101-0101.0001'])
+        $this->submit($form, ['nip' => '-', 'nik' => ''])
             ->assertRedirect(route('attendance.public.success', ['public_token' => $form->public_token]));
 
         $this->assertDatabaseHas('attendance_responses', [
             'attendance_form_id' => $form->id,
-            'nik' => '3201.0101-0101.0001',
-            'nip' => null,
+            'nip' => '-',
+            'nik' => null,
         ]);
+    }
+
+    public function test_empty_nik_with_nip_zero_succeeds(): void
+    {
+        $form = $this->openForm($this->createActivity());
+
+        $this->submit($form, ['nik' => '', 'nip' => '0'])
+            ->assertRedirect(route('attendance.public.success', ['public_token' => $form->public_token]));
     }
 
     public function test_only_nip_can_be_submitted(): void
@@ -156,25 +165,32 @@ class AttendanceNikNipSplitTest extends TestCase
         ]);
     }
 
-    public function test_empty_strings_are_stored_as_null(): void
+    public function test_empty_nik_is_stored_as_null(): void
     {
         $form = $this->openForm($this->createActivity());
 
-        $this->submit($form, ['nik' => '', 'nip' => '   '])
+        $this->submit($form, ['nik' => '', 'nip' => '0'])
             ->assertRedirect(route('attendance.public.success', ['public_token' => $form->public_token]));
 
         $response = AttendanceResponse::query()->where('attendance_form_id', $form->id)->first();
         $this->assertNull($response?->nik);
-        $this->assertNull($response?->nip);
+        $this->assertSame('0', $response?->nip);
         $this->assertNull($response?->nik_normalized);
-        $this->assertNull($response?->nip_normalized);
+    }
+
+    public function test_blank_nip_is_rejected(): void
+    {
+        $form = $this->openForm($this->createActivity());
+
+        $this->submit($form, ['nik' => '3201010101010001', 'nip' => '   '])
+            ->assertSessionHasErrors('nip');
     }
 
     public function test_nik_is_normalized(): void
     {
         $form = $this->openForm($this->createActivity());
 
-        $this->submit($form, ['nik' => '3201.0101-0101.0001']);
+        $this->submit($form, ['nik' => '3201.0101-0101.0001', 'nip' => '198001012020031001']);
 
         $this->assertDatabaseHas('attendance_responses', [
             'attendance_form_id' => $form->id,
@@ -198,8 +214,8 @@ class AttendanceNikNipSplitTest extends TestCase
     {
         $form = $this->openForm($this->createActivity());
 
-        $this->submit($form, ['nik' => '3201010101010001', 'name' => 'Peserta A']);
-        $this->submit($form, ['nik' => '3201.0101-0101.0001', 'name' => 'Peserta B'])
+        $this->submit($form, ['nik' => '3201010101010001', 'nip' => '198001012020031001', 'name' => 'Peserta A']);
+        $this->submit($form, ['nik' => '3201.0101-0101.0001', 'nip' => '198001012020031002', 'name' => 'Peserta B'])
             ->assertRedirect(route('attendance.public.show', ['public_token' => $form->public_token]))
             ->assertSessionHas('attendance_duplicate', true);
 
@@ -224,11 +240,35 @@ class AttendanceNikNipSplitTest extends TestCase
             'category_id' => $this->defaultCategory()->id,
         ]));
 
-        $this->submit($formA, ['nik' => '3201010101010001']);
-        $this->submit($formB, ['nik' => '3201010101010001'])
+        $this->submit($formA, ['nik' => '3201010101010001', 'nip' => '198001012020031001']);
+        $this->submit($formB, ['nik' => '3201010101010001', 'nip' => '198001012020031001'])
             ->assertRedirect(route('attendance.public.success', ['public_token' => $formB->public_token]));
 
         $this->assertSame(2, AttendanceResponse::query()->count());
+    }
+
+    public function test_placeholder_nip_zero_is_not_treated_as_duplicate(): void
+    {
+        $form = $this->openForm($this->createActivity());
+
+        $this->submit($form, ['nip' => '0', 'name' => 'Peserta A'])
+            ->assertRedirect(route('attendance.public.success', ['public_token' => $form->public_token]));
+        $this->submit($form, ['nip' => '0', 'name' => 'Peserta B'])
+            ->assertRedirect(route('attendance.public.success', ['public_token' => $form->public_token]));
+
+        $this->assertSame(2, AttendanceResponse::query()->where('attendance_form_id', $form->id)->count());
+    }
+
+    public function test_placeholder_nip_dash_is_not_treated_as_duplicate(): void
+    {
+        $form = $this->openForm($this->createActivity());
+
+        $this->submit($form, ['nip' => '-', 'name' => 'Peserta A'])
+            ->assertRedirect(route('attendance.public.success', ['public_token' => $form->public_token]));
+        $this->submit($form, ['nip' => '-', 'name' => 'Peserta B'])
+            ->assertRedirect(route('attendance.public.success', ['public_token' => $form->public_token]));
+
+        $this->assertSame(2, AttendanceResponse::query()->where('attendance_form_id', $form->id)->count());
     }
 
     public function test_same_nip_on_different_activities_is_allowed(): void
@@ -440,12 +480,17 @@ class AttendanceNikNipSplitTest extends TestCase
             ->assertSessionHasErrors('nik');
     }
 
-    public function test_invalid_nip_format_is_rejected(): void
+    public function test_any_non_empty_nip_string_is_accepted(): void
     {
         $form = $this->openForm($this->createActivity());
 
         $this->submit($form, ['nip' => 'NOT-A-NIP'])
-            ->assertSessionHasErrors('nip');
+            ->assertRedirect(route('attendance.public.success', ['public_token' => $form->public_token]));
+
+        $this->assertDatabaseHas('attendance_responses', [
+            'attendance_form_id' => $form->id,
+            'nip' => 'NOT-A-NIP',
+        ]);
     }
 
     public function test_route_cache_succeeds(): void

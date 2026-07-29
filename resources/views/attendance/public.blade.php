@@ -66,7 +66,8 @@
                             label="NIP"
                             name="nip"
                             :value="old('nip')"
-                            hint="Opsional. Isi jika Anda memiliki NIP."
+                            required
+                            hint="Wajib diisi. Jika tidak memiliki NIP, isi dengan 0 atau -."
                         />
                     </div>
 

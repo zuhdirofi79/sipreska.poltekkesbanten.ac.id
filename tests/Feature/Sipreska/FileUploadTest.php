@@ -358,6 +358,7 @@ class FileUploadTest extends TestCase
         $this->post(route('attendance.public.store', $form->public_token), [
             'name' => 'Peserta A',
             'nik' => '1234567890123456',
+            'nip' => '198001012020031001',
             'work_unit' => 'd3-kebidanan',
             'signature_data' => 'data:image/png;base64,'.base64_encode($png),
         ])->assertRedirect();

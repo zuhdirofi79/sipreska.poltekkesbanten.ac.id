@@ -75,7 +75,8 @@ class AttendanceService
 
     public function isDuplicateNip(AttendanceForm $form, ?string $nipNormalized, ?int $excludeId = null): bool
     {
-        if ($nipNormalized === null || $nipNormalized === '') {
+        // "0" is a public placeholder for participants without a real NIP; do not treat as unique identity.
+        if ($nipNormalized === null || $nipNormalized === '' || $nipNormalized === '0') {
             return false;
         }
 

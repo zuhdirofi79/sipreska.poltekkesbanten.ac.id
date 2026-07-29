@@ -24,7 +24,7 @@ class StorePublicAttendanceRequest extends FormRequest
         $rules = [
             'name' => ['required', 'string', 'max:255'],
             'nik' => ['nullable', 'string', 'max:32', new ValidIdentityNumber('Format NIK tidak valid.')],
-            'nip' => ['nullable', 'string', 'max:32', new ValidIdentityNumber('Format NIP tidak valid.')],
+            'nip' => ['required', 'string', 'max:50'],
             'position' => ['nullable', 'string', 'max:255'],
             'work_unit' => ['required', Rule::enum(AttendanceWorkUnit::class)],
             'institution_name' => ['nullable', 'string', 'max:255'],
@@ -38,6 +38,13 @@ class StorePublicAttendanceRequest extends FormRequest
         }
 
         return $rules;
+    }
+
+    public function messages(): array
+    {
+        return [
+            'nip.required' => 'NIP wajib diisi. Jika tidak memiliki NIP, isi dengan 0 atau -.',
+        ];
     }
 
     protected function prepareForValidation(): void

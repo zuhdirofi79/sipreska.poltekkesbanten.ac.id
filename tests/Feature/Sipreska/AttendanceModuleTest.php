@@ -40,6 +40,7 @@ class AttendanceModuleTest extends TestCase
         return [
             'name' => 'Andi Wijaya',
             'nik' => '1234567890123456',
+            'nip' => '198001012020031001',
             'position' => 'Staff',
             'work_unit' => AttendanceWorkUnit::D3Kebidanan->value,
             'signature_data' => $this->minimalPngBase64(),
