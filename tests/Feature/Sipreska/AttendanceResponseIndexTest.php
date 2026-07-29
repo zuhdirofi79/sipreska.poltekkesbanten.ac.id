@@ -152,11 +152,12 @@ class AttendanceResponseIndexTest extends TestCase
             ]);
         }
 
+        // Default sort is oldest first: Alpha (earliest) on page 1, Zeta (latest) on page 2.
         $this->actingAs($admin)
             ->get(route('activities.daftar-hadir.responses', $activity))
             ->assertOk()
-            ->assertSee('Zeta Participant')
-            ->assertDontSee('Alpha Participant');
+            ->assertSee('Alpha Participant')
+            ->assertDontSee('Zeta Participant');
     }
 
     public function test_search_by_name_works(): void
@@ -255,6 +256,32 @@ class AttendanceResponseIndexTest extends TestCase
             ->assertDontSee('Other Date');
     }
 
+    public function test_default_sort_is_oldest_first(): void
+    {
+        [$admin, $activity, $form] = $this->activityWithForm();
+
+        $this->createResponse($form, [
+            'name' => 'Older Entry',
+            'nip_nik' => '3000000000000001',
+            'nip_nik_normalized' => '3000000000000001',
+            'submitted_at' => Carbon::parse('2026-07-01 08:00:00'),
+        ]);
+        $this->createResponse($form, [
+            'name' => 'Newer Entry',
+            'nip_nik' => '3000000000000002',
+            'nip_nik_normalized' => '3000000000000002',
+            'submitted_at' => Carbon::parse('2026-07-14 09:00:00'),
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get(route('activities.daftar-hadir.responses', $activity));
+
+        $response->assertOk();
+        $content = (string) $response->getContent();
+        $this->assertTrue(strpos($content, 'Older Entry') < strpos($content, 'Newer Entry'));
+        $this->assertStringContainsString('value="oldest" selected', $content);
+    }
+
     public function test_sorting_newest_works(): void
     {
         [$admin, $activity, $form] = $this->activityWithForm();
@@ -277,6 +304,30 @@ class AttendanceResponseIndexTest extends TestCase
 
         $response->assertOk();
         $this->assertTrue(strpos($response->getContent(), 'Newer Entry') < strpos($response->getContent(), 'Older Entry'));
+    }
+
+    public function test_sorting_oldest_works(): void
+    {
+        [$admin, $activity, $form] = $this->activityWithForm();
+
+        $this->createResponse($form, [
+            'name' => 'Older Entry',
+            'nip_nik' => '3000000000000001',
+            'nip_nik_normalized' => '3000000000000001',
+            'submitted_at' => Carbon::parse('2026-07-01 08:00:00'),
+        ]);
+        $this->createResponse($form, [
+            'name' => 'Newer Entry',
+            'nip_nik' => '3000000000000002',
+            'nip_nik_normalized' => '3000000000000002',
+            'submitted_at' => Carbon::parse('2026-07-14 09:00:00'),
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get(route('activities.daftar-hadir.responses', ['activity' => $activity, 'sort' => 'oldest']));
+
+        $response->assertOk();
+        $this->assertTrue(strpos($response->getContent(), 'Older Entry') < strpos($response->getContent(), 'Newer Entry'));
     }
 
     public function test_empty_state_is_shown_when_no_responses(): void

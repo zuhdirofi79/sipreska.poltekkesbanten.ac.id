@@ -26,7 +26,6 @@ class AttendanceExportService
     {
         $responses = $this->attendanceService
             ->responsesQuery($form, $filters)
-            ->orderBy('submitted_at')
             ->get();
         $filename = $this->buildFilename($activity, 'xlsx');
 
@@ -89,7 +88,6 @@ class AttendanceExportService
     {
         $responses = $this->attendanceService
             ->responsesQuery($form, $filters)
-            ->orderBy('submitted_at')
             ->get();
         $filename = $this->buildFilename($activity, 'pdf');
 

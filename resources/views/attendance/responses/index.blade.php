@@ -137,8 +137,8 @@
             <input type="date" name="date_from" value="{{ $filters['date_from'] }}" class="sipreska-input" aria-label="Tanggal mulai submit">
             <input type="date" name="date_to" value="{{ $filters['date_to'] }}" class="sipreska-input" aria-label="Tanggal akhir submit">
             <select name="sort" class="sipreska-select">
-                <option value="newest" @selected($filters['sort'] === 'newest')>Terbaru</option>
                 <option value="oldest" @selected($filters['sort'] === 'oldest')>Terlama</option>
+                <option value="newest" @selected($filters['sort'] === 'newest')>Terbaru</option>
                 <option value="name_asc" @selected($filters['sort'] === 'name_asc')>Nama A–Z</option>
                 <option value="name_desc" @selected($filters['sort'] === 'name_desc')>Nama Z–A</option>
             </select>

@@ -297,7 +297,7 @@ class AttendanceService
             $query->whereDate('submitted_at', '<=', $filters['date_to']);
         }
 
-        return $this->applyResponseSort($query, $filters['sort'] ?? 'newest');
+        return $this->applyResponseSort($query, $filters['sort'] ?? 'oldest');
     }
 
     /** @return array{total: int, today: int, last_submitted_at: ?\Illuminate\Support\Carbon} */
@@ -333,10 +333,10 @@ class AttendanceService
     private function applyResponseSort(Builder $query, string $sort): Builder
     {
         return match ($sort) {
-            'oldest' => $query->orderBy('submitted_at')->orderBy('created_at'),
-            'name_asc' => $query->orderBy('name')->orderByDesc('submitted_at'),
-            'name_desc' => $query->orderByDesc('name')->orderByDesc('submitted_at'),
-            default => $query->orderByDesc('submitted_at')->orderByDesc('created_at'),
+            'newest' => $query->orderByDesc('submitted_at')->orderByDesc('id'),
+            'name_asc' => $query->orderBy('name')->orderBy('submitted_at')->orderBy('id'),
+            'name_desc' => $query->orderByDesc('name')->orderBy('submitted_at')->orderBy('id'),
+            default => $query->orderBy('submitted_at')->orderBy('id'),
         };
     }
 

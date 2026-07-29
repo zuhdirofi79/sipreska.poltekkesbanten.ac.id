@@ -33,7 +33,7 @@ class AttendanceResponseFilterRequest extends FormRequest
             'work_unit' => $this->filled('work_unit') ? (string) $this->input('work_unit') : null,
             'date_from' => $this->filled('date_from') ? (string) $this->input('date_from') : null,
             'date_to' => $this->filled('date_to') ? (string) $this->input('date_to') : null,
-            'sort' => (string) ($this->input('sort') ?: 'newest'),
+            'sort' => (string) ($this->input('sort') ?: 'oldest'),
         ];
     }
 }

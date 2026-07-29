@@ -249,7 +249,6 @@ class ActivityAttendanceController extends Controller
 
         $responses = $this->attendanceService
             ->responsesQuery($form, $filters)
-            ->orderBy('submitted_at')
             ->get();
 
         return view('exports.attendance-pdf', [
