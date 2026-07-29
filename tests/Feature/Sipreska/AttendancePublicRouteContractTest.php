@@ -75,7 +75,28 @@ class AttendancePublicRouteContractTest extends TestCase
             $this->assertTrue(Route::has($name), "Route [{$name}] should survive route:cache.");
         }
 
+        foreach (AttendancePublicRoutes::SHORT_ALL as $name) {
+            $this->assertTrue(Route::has($name), "Route [{$name}] should survive route:cache.");
+        }
+
         Artisan::call('route:clear');
+    }
+
+    public function test_short_attendance_routes_are_registered(): void
+    {
+        foreach (AttendancePublicRoutes::SHORT_ALL as $name) {
+            $this->assertTrue(Route::has($name), "Route [{$name}] should be registered.");
+        }
+
+        $routes = app('router')->getRoutes();
+        $show = $routes->getByName(AttendancePublicRoutes::SHORT_SHOW);
+        $store = $routes->getByName(AttendancePublicRoutes::SHORT_STORE);
+
+        $this->assertNotNull($show);
+        $this->assertNotNull($store);
+        $this->assertSame('a/{short_code}', $show->uri());
+        $this->assertSame('a/{short_code}', $store->uri());
+        $this->assertContains('throttle:10,1', $store->gatherMiddleware());
     }
 
     public function test_edit_attendance_tab_returns_200_when_public_routes_exist(): void
@@ -95,9 +116,11 @@ class AttendancePublicRouteContractTest extends TestCase
             'signature_required' => false,
         ]);
 
+        $form = AttendanceForm::query()->where('public_token', self::TOKEN)->firstOrFail();
+
         $this->actingAs($admin)
             ->get(route('activities.edit', ['activity' => $activity, 'tab' => 'attendance']))
             ->assertOk()
-            ->assertSee(route(AttendancePublicRoutes::SHOW, ['public_token' => self::TOKEN]), false);
+            ->assertSee(AttendancePublicRoutes::showUrlForForm($form), false);
     }
 }

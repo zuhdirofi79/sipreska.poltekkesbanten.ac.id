@@ -163,9 +163,7 @@ class ActivityController extends Controller
         ]);
 
         $form = $activity->attendanceForm;
-        $publicAttendanceUrl = $form?->public_token
-            ? AttendancePublicRoutes::showUrl($form->public_token)
-            : null;
+        $publicAttendanceUrl = AttendancePublicRoutes::showUrlForForm($form);
 
         return view('activities.edit', [
             'activity' => $activity,

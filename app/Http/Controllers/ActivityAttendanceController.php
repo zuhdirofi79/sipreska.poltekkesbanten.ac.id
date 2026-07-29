@@ -12,6 +12,7 @@ use App\Services\AttendanceExportService;
 use App\Services\AttendanceService;
 use App\Services\AuditLogService;
 use App\Support\AttendanceQrImage;
+use App\Support\AttendancePublicRoutes;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -135,7 +136,8 @@ class ActivityAttendanceController extends Controller
         $this->authorize('manageAttendance', $activity);
 
         $form = $this->attendanceService->ensureForm($activity);
-        $url = route('attendance.public.show', ['public_token' => $form->public_token]);
+        $url = AttendancePublicRoutes::showUrlForForm($form)
+            ?? route('attendance.public.show', ['public_token' => $form->public_token]);
 
         $forDownload = $request->has('size');
         $size = $forDownload ? $request->integer('size', 512) : null;

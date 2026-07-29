@@ -17,9 +17,7 @@ class StorePublicAttendanceRequest extends FormRequest
 
     public function rules(): array
     {
-        $form = AttendanceForm::query()
-            ->where('public_token', (string) $this->route('public_token'))
-            ->first();
+        $form = $this->resolveAttendanceForm();
 
         $rules = [
             'name' => ['required', 'string', 'max:255'],
@@ -84,5 +82,26 @@ class StorePublicAttendanceRequest extends FormRequest
         $value = trim((string) $this->input($key));
 
         return $value === '' ? null : $value;
+    }
+
+    private function resolveAttendanceForm(): ?AttendanceForm
+    {
+        $shortCode = $this->route('short_code');
+
+        if (is_string($shortCode) && $shortCode !== '') {
+            return AttendanceForm::query()
+                ->where('short_code', strtoupper($shortCode))
+                ->first();
+        }
+
+        $publicToken = $this->route('public_token');
+
+        if (is_string($publicToken) && $publicToken !== '') {
+            return AttendanceForm::query()
+                ->where('public_token', $publicToken)
+                ->first();
+        }
+
+        return null;
     }
 }

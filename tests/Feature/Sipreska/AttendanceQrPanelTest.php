@@ -158,7 +158,7 @@ class AttendanceQrPanelTest extends TestCase
     {
         [$admin, $activity, $form] = $this->activityWithForm();
 
-        $publicUrl = AttendancePublicRoutes::showUrl($form->public_token);
+        $publicUrl = AttendancePublicRoutes::showUrlForForm($form);
         $qrImageUrl = route('activities.daftar-hadir.qr', $activity);
         $qrDownloadUrl = $qrImageUrl.'?size=1024';
 

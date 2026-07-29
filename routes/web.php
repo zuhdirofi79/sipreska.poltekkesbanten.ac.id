@@ -53,6 +53,19 @@ Route::prefix('absensi/{public_token}')
             ->name('store');
     });
 
+// Short public attendance aliases — keep long /absensi/{public_token} alive.
+Route::prefix('a/{short_code}')
+    ->where(['short_code' => '[A-HJ-NP-Za-hj-np-z2-9]{6,12}'])
+    ->name('attendance.short.')
+    ->group(function (): void {
+        Route::get('/', [PublicAttendanceController::class, 'showByShortCode'])
+            ->name('show');
+
+        Route::post('/', [PublicAttendanceController::class, 'storeByShortCode'])
+            ->middleware('throttle:10,1')
+            ->name('store');
+    });
+
 Route::middleware(['auth', 'active', 'custom.app'])->group(function () {
     Route::get('/ganti-password', [ChangePasswordController::class, 'edit'])->name('password.change');
     Route::put('/ganti-password', [ChangePasswordController::class, 'update'])->name('password.update');

@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\AttendanceForm;
 use Illuminate\Support\Facades\Route;
 
 final class AttendancePublicRoutes
@@ -12,11 +13,21 @@ final class AttendancePublicRoutes
 
     public const SUCCESS = 'attendance.public.success';
 
+    public const SHORT_SHOW = 'attendance.short.show';
+
+    public const SHORT_STORE = 'attendance.short.store';
+
     /** @var list<string> */
     public const ALL = [
         self::SHOW,
         self::STORE,
         self::SUCCESS,
+    ];
+
+    /** @var list<string> */
+    public const SHORT_ALL = [
+        self::SHORT_SHOW,
+        self::SHORT_STORE,
     ];
 
     public static function registered(): bool
@@ -37,5 +48,27 @@ final class AttendancePublicRoutes
         }
 
         return route(self::SHOW, ['public_token' => $publicToken]);
+    }
+
+    public static function showUrlForForm(?AttendanceForm $form): ?string
+    {
+        if ($form === null) {
+            return null;
+        }
+
+        if (is_string($form->short_code) && $form->short_code !== '' && Route::has(self::SHORT_SHOW)) {
+            return route(self::SHORT_SHOW, ['short_code' => $form->short_code]);
+        }
+
+        return self::showUrl((string) $form->public_token);
+    }
+
+    public static function storeUrlForForm(AttendanceForm $form): string
+    {
+        if (is_string($form->short_code) && $form->short_code !== '' && Route::has(self::SHORT_STORE)) {
+            return route(self::SHORT_STORE, ['short_code' => $form->short_code]);
+        }
+
+        return route(self::STORE, ['public_token' => $form->public_token]);
     }
 }

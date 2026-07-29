@@ -48,17 +48,18 @@ class AttendanceSharePanelTest extends TestCase
             ->assertSee('Peserta dapat membuka tautan ini tanpa login dan mengisi daftar hadir seperti Google Form.');
     }
 
-    public function test_public_url_uses_named_attendance_route_and_token(): void
+    public function test_public_url_uses_short_route_when_short_code_exists(): void
     {
         [$admin, $activity, $form] = $this->activityWithForm();
 
-        $expectedUrl = route('attendance.public.show', ['public_token' => $form->public_token]);
+        $expectedUrl = route('attendance.short.show', ['short_code' => $form->short_code]);
 
         $this->actingAs($admin)
             ->get(route('activities.edit', ['activity' => $activity, 'tab' => 'attendance']))
             ->assertOk()
             ->assertSee($expectedUrl, false)
-            ->assertSee('/absensi/share-panel-token-abc123', false);
+            ->assertSee('/a/'.$form->short_code, false)
+            ->assertDontSee('/absensi/share-panel-token-abc123', false);
     }
 
     public function test_copy_button_is_type_button_not_submit(): void
@@ -102,7 +103,7 @@ class AttendanceSharePanelTest extends TestCase
     {
         [$admin, $activity, $form] = $this->activityWithForm();
 
-        $publicUrl = route('attendance.public.show', ['public_token' => $form->public_token]);
+        $publicUrl = route('attendance.short.show', ['short_code' => $form->short_code]);
 
         $this->actingAs($admin)
             ->get(route('activities.edit', ['activity' => $activity, 'tab' => 'attendance']))
@@ -117,7 +118,7 @@ class AttendanceSharePanelTest extends TestCase
     {
         [$admin, $activity, $form] = $this->activityWithForm();
 
-        $publicUrl = route('attendance.public.show', ['public_token' => $form->public_token]);
+        $publicUrl = route('attendance.short.show', ['short_code' => $form->short_code]);
         $message = 'Silakan isi daftar hadir kegiatan '.$activity->title.' melalui tautan berikut: '.$publicUrl;
         $whatsappUrl = 'https://wa.me/?text='.rawurlencode($message);
 
@@ -132,7 +133,7 @@ class AttendanceSharePanelTest extends TestCase
     {
         [$admin, $activity, $form] = $this->activityWithForm();
 
-        $publicUrl = route('attendance.public.show', ['public_token' => $form->public_token]);
+        $publicUrl = route('attendance.short.show', ['short_code' => $form->short_code]);
         $qrImageUrl = route('activities.daftar-hadir.qr', $activity);
 
         $this->actingAs($admin)

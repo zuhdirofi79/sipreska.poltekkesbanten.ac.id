@@ -6,6 +6,7 @@ use App\Http\Requests\Activity\StorePublicAttendanceRequest;
 use App\Models\AttendanceForm;
 use App\Services\AttendanceService;
 use App\Support\AttendanceConfirmation;
+use App\Support\AttendancePublicRoutes;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -19,11 +20,49 @@ class PublicAttendanceController extends Controller
 
     public function show(string $public_token): View
     {
-        $attendanceForm = AttendanceForm::query()
-            ->with('activity.unit')
-            ->where('public_token', $public_token)
-            ->firstOrFail();
+        return $this->renderForm($this->findByPublicToken($public_token));
+    }
 
+    public function showByShortCode(string $short_code): View
+    {
+        return $this->renderForm($this->findByShortCode($short_code));
+    }
+
+    public function store(StorePublicAttendanceRequest $request, string $public_token): RedirectResponse
+    {
+        return $this->storeResponse(
+            $request,
+            $this->findByPublicToken($public_token),
+            AttendancePublicRoutes::SHOW,
+            ['public_token' => $public_token],
+        );
+    }
+
+    public function storeByShortCode(StorePublicAttendanceRequest $request, string $short_code): RedirectResponse
+    {
+        $form = $this->findByShortCode($short_code);
+
+        return $this->storeResponse(
+            $request,
+            $form,
+            AttendancePublicRoutes::SHORT_SHOW,
+            ['short_code' => $form->short_code],
+        );
+    }
+
+    public function success(string $public_token): View
+    {
+        $attendanceForm = $this->findByPublicToken($public_token);
+
+        return view('attendance.public-success', [
+            'attendanceForm' => $attendanceForm,
+            'activity' => $attendanceForm->activity,
+            'successData' => session('attendance_success'),
+        ]);
+    }
+
+    private function renderForm(AttendanceForm $attendanceForm): View
+    {
         return view('attendance.public', [
             'attendanceForm' => $attendanceForm,
             'activity' => $attendanceForm->activity,
@@ -31,19 +70,18 @@ class PublicAttendanceController extends Controller
         ]);
     }
 
-    public function store(StorePublicAttendanceRequest $request, string $public_token): RedirectResponse
-    {
-        $attendanceForm = AttendanceForm::query()
-            ->with('activity')
-            ->where('public_token', $public_token)
-            ->firstOrFail();
-
+    private function storeResponse(
+        StorePublicAttendanceRequest $request,
+        AttendanceForm $attendanceForm,
+        string $duplicateShowRoute,
+        array $duplicateShowParams,
+    ): RedirectResponse {
         try {
             $response = $this->attendanceService->submitResponse($attendanceForm, $request->validated(), $request);
         } catch (RuntimeException $exception) {
             if ($this->isDuplicateSubmissionError($exception)) {
                 return redirect()
-                    ->route('attendance.public.show', ['public_token' => $public_token])
+                    ->route($duplicateShowRoute, $duplicateShowParams)
                     ->with('attendance_duplicate', true);
             }
 
@@ -51,7 +89,7 @@ class PublicAttendanceController extends Controller
         } catch (QueryException $exception) {
             if ($this->isUniqueConstraintViolation($exception)) {
                 return redirect()
-                    ->route('attendance.public.show', ['public_token' => $public_token])
+                    ->route($duplicateShowRoute, $duplicateShowParams)
                     ->with('attendance_duplicate', true);
             }
 
@@ -78,22 +116,24 @@ class PublicAttendanceController extends Controller
         }
 
         return redirect()
-            ->route('attendance.public.success', ['public_token' => $attendanceForm->public_token])
+            ->route(AttendancePublicRoutes::SUCCESS, ['public_token' => $attendanceForm->public_token])
             ->with('attendance_success', $successData);
     }
 
-    public function success(string $public_token): View
+    private function findByPublicToken(string $publicToken): AttendanceForm
     {
-        $attendanceForm = AttendanceForm::query()
-            ->with('activity')
-            ->where('public_token', $public_token)
+        return AttendanceForm::query()
+            ->with('activity.unit')
+            ->where('public_token', $publicToken)
             ->firstOrFail();
+    }
 
-        return view('attendance.public-success', [
-            'attendanceForm' => $attendanceForm,
-            'activity' => $attendanceForm->activity,
-            'successData' => session('attendance_success'),
-        ]);
+    private function findByShortCode(string $shortCode): AttendanceForm
+    {
+        return AttendanceForm::query()
+            ->with('activity.unit')
+            ->where('short_code', strtoupper($shortCode))
+            ->firstOrFail();
     }
 
     private function isDuplicateSubmissionError(RuntimeException $exception): bool

@@ -115,6 +115,9 @@
                     class="sipreska-input w-full min-w-0 truncate bg-white text-sm text-gray-700"
                     aria-label="Tautan publik absensi"
                 >
+                <p class="mt-1 text-xs text-blue-800">
+                    Link pendek otomatis untuk QR dan share.
+                </p>
             </div>
 
             <div class="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">

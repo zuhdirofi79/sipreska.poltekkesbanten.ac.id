@@ -37,7 +37,7 @@
             @else
                 <form
                     method="POST"
-                    action="{{ route('attendance.public.store', ['public_token' => $attendanceForm->public_token]) }}"
+                    action="{{ \App\Support\AttendancePublicRoutes::storeUrlForForm($attendanceForm) }}"
                     x-ref="form"
                     x-data="attendanceConfirmation({ required: {{ $attendanceForm->signature_required ? 'true' : 'false' }} })"
                     x-init="showInstitution = '{{ old('work_unit') }}' === '{{ \App\Enums\AttendanceWorkUnit::InstansiLainnya->value }}'"
