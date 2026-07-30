@@ -8,6 +8,8 @@
             && Route::has('activities.daftar-hadir.export-excel')
             && Route::has('activities.daftar-hadir.export-pdf')
             && Route::has('activities.daftar-hadir.print')
+            && Route::has('activities.daftar-hadir.template-offline')
+            && Route::has('activities.daftar-hadir.import.create')
             && Route::has('attendance.public.show');
     @endphp
 
@@ -405,6 +407,28 @@
             </div>
             <button type="submit" class="sipreska-btn-primary">{{ $form ? 'Perbarui' : 'Buat' }} Form Presensi</button>
         </form>
+
+        @if ($form)
+            <div class="mt-6 rounded-xl border border-slate-200 bg-slate-50/70 p-4 md:p-5">
+                <h3 class="text-base font-semibold text-slate-900">Absensi Offline</h3>
+                <p class="mt-1 text-sm text-slate-700">
+                    Untuk kegiatan offline, unduh template kertas daftar hadir terlebih dahulu, cetak, kumpulkan tanda tangan peserta, lalu upload hasil scan/foto untuk diimport.
+                </p>
+                <p class="mt-2 text-xs text-slate-600">
+                    Gunakan template dari SIPRESKA agar proses import lebih rapi. File scan tetap harus direview sebelum data masuk.
+                </p>
+                <div class="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                    <a
+                        href="{{ route('activities.daftar-hadir.template-offline', $activity) }}"
+                        class="sipreska-btn-primary w-full sm:w-auto"
+                    >Download Template Kertas Absensi</a>
+                    <a
+                        href="{{ route('activities.daftar-hadir.import.create', $activity) }}"
+                        class="sipreska-btn-secondary w-full sm:w-auto"
+                    >Import Absensi Offline</a>
+                </div>
+            </div>
+        @endif
 
         @if ($form)
             @php

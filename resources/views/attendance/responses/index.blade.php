@@ -27,6 +27,7 @@
 
     <x-page-header title="Partisipan Hadir">
         <x-slot:actions>
+            <a href="{{ route('activities.daftar-hadir.import.create', $activity) }}" class="sipreska-btn-secondary">Import Offline</a>
             <a href="{{ route('activities.edit', [$activity, 'tab' => 'attendance']) }}" class="sipreska-btn-secondary">Kembali ke Daftar Hadir</a>
         </x-slot:actions>
     </x-page-header>

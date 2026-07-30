@@ -86,6 +86,11 @@ class Activity extends Model
         return $this->hasOne(AttendanceForm::class);
     }
 
+    public function offlineAttendanceImports(): HasMany
+    {
+        return $this->hasMany(OfflineAttendanceImport::class);
+    }
+
     public function scopeForUser($query, User $user)
     {
         if ($user->isSuperadmin()) {

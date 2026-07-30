@@ -17,6 +17,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\LegacyFormRedirectController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\OfflineAttendanceImportController;
 use App\Http\Controllers\PublicAttendanceController;
 use App\Http\Controllers\PublicFormController;
 use App\Http\Controllers\UnitController;
@@ -123,6 +124,25 @@ Route::middleware(['auth', 'active', 'custom.app', 'password.changed'])->group(f
         Route::get('/{activity}/daftar-hadir/print', [ActivityAttendanceController::class, 'print'])->name('daftar-hadir.print');
         Route::post('/{activity}/daftar-hadir/buka', [ActivityAttendanceController::class, 'open'])->name('daftar-hadir.open');
         Route::post('/{activity}/daftar-hadir/tutup', [ActivityAttendanceController::class, 'close'])->name('daftar-hadir.close');
+
+        // Offline attendance: template download + import/review/commit (before {response} catch-alls).
+        Route::get('/{activity}/daftar-hadir/template-offline', [OfflineAttendanceImportController::class, 'downloadTemplate'])
+            ->name('daftar-hadir.template-offline');
+        Route::get('/{activity}/daftar-hadir/import', [OfflineAttendanceImportController::class, 'create'])
+            ->name('daftar-hadir.import.create');
+        Route::post('/{activity}/daftar-hadir/import', [OfflineAttendanceImportController::class, 'store'])
+            ->name('daftar-hadir.import.store');
+        Route::get('/{activity}/daftar-hadir/import/{import}/review', [OfflineAttendanceImportController::class, 'review'])
+            ->name('daftar-hadir.import.review');
+        Route::post('/{activity}/daftar-hadir/import/{import}/review', [OfflineAttendanceImportController::class, 'updateReview'])
+            ->name('daftar-hadir.import.update-review');
+        Route::post('/{activity}/daftar-hadir/import/{import}/commit', [OfflineAttendanceImportController::class, 'commit'])
+            ->name('daftar-hadir.import.commit');
+        Route::get('/{activity}/daftar-hadir/import/{import}/preview', [OfflineAttendanceImportController::class, 'preview'])
+            ->name('daftar-hadir.import.preview');
+        Route::delete('/{activity}/daftar-hadir/import/{import}', [OfflineAttendanceImportController::class, 'destroy'])
+            ->name('daftar-hadir.import.destroy');
+
         Route::get('/{activity}/daftar-hadir/{response}/edit', [ActivityAttendanceController::class, 'editResponse'])->name('daftar-hadir.response.edit');
         Route::put('/{activity}/daftar-hadir/{response}', [ActivityAttendanceController::class, 'updateResponse'])->name('daftar-hadir.response.update');
         Route::delete('/{activity}/daftar-hadir/{response}', [ActivityAttendanceController::class, 'destroyResponse'])->name('daftar-hadir.response.destroy');
