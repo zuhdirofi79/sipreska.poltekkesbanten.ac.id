@@ -34,7 +34,6 @@ class AttendancePublicSuccessTest extends TestCase
     {
         return array_merge([
             'name' => 'Ahmad Fauzi',
-            'nik' => '1234567890123456',
             'nip' => '198001012020031001',
             'position' => 'Staff',
             'work_unit' => AttendanceWorkUnit::D3Kebidanan->value,
@@ -74,7 +73,7 @@ class AttendancePublicSuccessTest extends TestCase
         $this->get(route('attendance.public.show', ['public_token' => $form->public_token]))
             ->assertOk()
             ->assertSee('Nama Lengkap', false)
-            ->assertSee('NIK', false)
+            ->assertDontSee('name="nik"', false)
             ->assertSee('NIP', false)
             ->assertSee('Kirim Presensi', false);
     }
@@ -88,7 +87,8 @@ class AttendancePublicSuccessTest extends TestCase
         $this->assertDatabaseHas('attendance_responses', [
             'attendance_form_id' => $form->id,
             'name' => 'Ahmad Fauzi',
-            'nik_normalized' => '1234567890123456',
+            'nip_normalized' => '198001012020031001',
+            'nik' => null,
         ]);
     }
 
@@ -175,7 +175,7 @@ class AttendancePublicSuccessTest extends TestCase
         $this->assertSame(1, AttendanceResponse::query()->where('attendance_form_id', $form->id)->count());
     }
 
-    public function test_duplicate_nik_shows_friendly_message(): void
+    public function test_duplicate_submission_shows_friendly_message(): void
     {
         $form = $this->openForm($this->createActivity());
 
@@ -215,18 +215,19 @@ class AttendancePublicSuccessTest extends TestCase
             ->assertDontSee('9999999999999999', false);
     }
 
-    public function test_success_page_masks_nik(): void
+    public function test_success_page_masks_nip(): void
     {
         $form = $this->openForm($this->createActivity());
 
         $this->post(route('attendance.public.store', ['public_token' => $form->public_token]), $this->payload([
-            'nik' => '1234567890123456',
+            'nip' => '198001012020031001',
         ]));
 
         $this->get(route('attendance.public.success', ['public_token' => $form->public_token]))
             ->assertOk()
-            ->assertSee('************3456', false)
-            ->assertDontSee('1234567890123456', false);
+            ->assertSee('**************1001', false)
+            ->assertDontSee('198001012020031001', false)
+            ->assertDontSee('>NIK</', false);
     }
 
     public function test_success_page_shows_reference_code_not_database_id(): void

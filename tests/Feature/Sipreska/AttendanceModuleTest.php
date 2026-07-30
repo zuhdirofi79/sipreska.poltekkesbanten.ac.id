@@ -39,7 +39,6 @@ class AttendanceModuleTest extends TestCase
     {
         return [
             'name' => 'Andi Wijaya',
-            'nik' => '1234567890123456',
             'nip' => '198001012020031001',
             'position' => 'Staff',
             'work_unit' => AttendanceWorkUnit::D3Kebidanan->value,
@@ -60,7 +59,8 @@ class AttendanceModuleTest extends TestCase
 
         $this->assertDatabaseHas('attendance_responses', [
             'attendance_form_id' => $form->id,
-            'nik_normalized' => '1234567890123456',
+            'nip_normalized' => '198001012020031001',
+            'nik' => null,
         ]);
     }
 
@@ -87,7 +87,7 @@ class AttendanceModuleTest extends TestCase
         $this->get('/absensi/invalid-token-that-does-not-exist')->assertNotFound();
     }
 
-    public function test_duplicate_nik_is_rejected(): void
+    public function test_duplicate_nip_is_rejected(): void
     {
         $activity = Activity::factory()->create([
             'unit_id' => $this->unitBySlug('d3-kebidanan')->id,

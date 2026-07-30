@@ -38,13 +38,6 @@
                         <dd class="font-semibold text-gray-900">{{ $successData['name'] }}</dd>
                     </div>
 
-                    @if (! empty($successData['nik_masked']))
-                        <div class="flex flex-col gap-1 sm:flex-row sm:justify-between">
-                            <dt class="font-medium text-gray-500">NIK</dt>
-                            <dd class="font-mono text-gray-900">{{ $successData['nik_masked'] }}</dd>
-                        </div>
-                    @endif
-
                     @if (! empty($successData['nip_masked']))
                         <div class="flex flex-col gap-1 sm:flex-row sm:justify-between">
                             <dt class="font-medium text-gray-500">NIP</dt>

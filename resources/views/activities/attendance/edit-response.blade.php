@@ -14,25 +14,18 @@
 
             <x-form-input label="Nama Lengkap" name="name" :value="old('name', $response->name)" required />
 
-            <div class="grid gap-4 md:grid-cols-2">
-                <x-form-input
-                    label="NIK"
-                    name="nik"
-                    :value="old('nik', $response->nik)"
-                    hint="Opsional. Isi jika peserta memiliki NIK."
-                />
-                <x-form-input
-                    label="NIP"
-                    name="nip"
-                    :value="old('nip', $response->nip)"
-                    hint="Opsional. Isi jika peserta memiliki NIP."
-                />
-            </div>
+            <x-form-input
+                label="NIP"
+                name="nip"
+                :value="old('nip', $response->nip)"
+                required
+                hint="Wajib diisi. Jika tidak memiliki NIP, isi dengan 0 atau -."
+            />
 
             @if ($response->hasLegacyIdentity())
                 <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                     <strong>Identitas Lama:</strong> {{ $response->legacyIdentity() }}
-                    <p class="mt-1 text-xs text-amber-800">Data legacy belum terklasifikasi. Isi NIK/NIP terpisah jika diketahui.</p>
+                    <p class="mt-1 text-xs text-amber-800">Data legacy belum terklasifikasi. Isi NIP jika diketahui.</p>
                 </div>
             @endif
 

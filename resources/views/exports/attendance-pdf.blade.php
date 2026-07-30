@@ -89,7 +89,6 @@
             <tr>
                 <th>No</th>
                 <th>Nama</th>
-                <th>NIK</th>
                 <th>NIP</th>
                 <th>Identitas Lama</th>
                 <th>Jabatan</th>
@@ -107,7 +106,6 @@
                 <tr>
                     <td>{{ $index + 1 }}</td>
                     <td>{{ $response->name }}</td>
-                    <td>{{ $response->nik ?? '-' }}</td>
                     <td>{{ $response->nip ?? '-' }}</td>
                     <td>
                         @if ($response->hasLegacyIdentity())
@@ -131,7 +129,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="10">Belum ada peserta.</td>
+                    <td colspan="9">Belum ada peserta.</td>
                 </tr>
             @endforelse
         </tbody>

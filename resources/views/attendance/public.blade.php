@@ -55,21 +55,13 @@
 
                     <x-form-input label="Nama Lengkap" name="name" :value="old('name')" required />
 
-                    <div class="grid gap-4 md:grid-cols-2">
-                        <x-form-input
-                            label="NIK"
-                            name="nik"
-                            :value="old('nik')"
-                            hint="Opsional. Isi jika Anda memiliki NIK."
-                        />
-                        <x-form-input
-                            label="NIP"
-                            name="nip"
-                            :value="old('nip')"
-                            required
-                            hint="Wajib diisi. Jika tidak memiliki NIP, isi dengan 0 atau -."
-                        />
-                    </div>
+                    <x-form-input
+                        label="NIP"
+                        name="nip"
+                        :value="old('nip')"
+                        required
+                        hint="Wajib diisi. Jika tidak memiliki NIP, isi dengan 0 atau -."
+                    />
 
                     <x-form-input label="Jabatan" name="position" :value="old('position')" />
 

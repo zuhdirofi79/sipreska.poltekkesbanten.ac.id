@@ -125,7 +125,7 @@
                 type="search"
                 name="search"
                 value="{{ $filters['search'] }}"
-                placeholder="Cari nama, NIK, NIP, identitas lama, jabatan..."
+                placeholder="Cari nama, NIP, identitas lama, jabatan..."
                 class="sipreska-input lg:col-span-2"
             >
             <select name="work_unit" class="sipreska-select">
@@ -164,7 +164,6 @@
                         <th class="px-4 py-3 font-medium whitespace-nowrap">No</th>
                         <th class="px-4 py-3 font-medium whitespace-nowrap">Waktu Submit</th>
                         <th class="px-4 py-3 font-medium whitespace-nowrap">Nama</th>
-                        <th class="px-4 py-3 font-medium whitespace-nowrap">NIK</th>
                         <th class="px-4 py-3 font-medium whitespace-nowrap">NIP</th>
                         <th class="px-4 py-3 font-medium whitespace-nowrap">Identitas Lama</th>
                         <th class="px-4 py-3 font-medium whitespace-nowrap">Jabatan</th>
@@ -186,7 +185,6 @@
                             <td class="px-4 py-3 whitespace-nowrap text-gray-500">{{ $responses->firstItem() + $index }}</td>
                             <td class="px-4 py-3 whitespace-nowrap">{{ DateTimeFormatter::display($response->submitted_at) }}</td>
                             <td class="px-4 py-3 font-medium text-gray-900">{{ $response->name }}</td>
-                            <td class="px-4 py-3 whitespace-nowrap">{{ $response->nik ?? '-' }}</td>
                             <td class="px-4 py-3 whitespace-nowrap">{{ $response->nip ?? '-' }}</td>
                             <td class="px-4 py-3 whitespace-nowrap">
                                 @if ($response->hasLegacyIdentity())

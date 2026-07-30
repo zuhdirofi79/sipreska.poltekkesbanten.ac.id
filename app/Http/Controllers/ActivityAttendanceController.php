@@ -120,7 +120,6 @@ class ActivityAttendanceController extends Controller
             'responses' => $responses->map(fn (AttendanceResponse $response) => [
                 'id' => $response->id,
                 'name' => $response->name,
-                'nik' => $response->nik,
                 'nip' => $response->nip,
                 'legacy_identity' => $response->legacyIdentity(),
                 'position' => $response->position,

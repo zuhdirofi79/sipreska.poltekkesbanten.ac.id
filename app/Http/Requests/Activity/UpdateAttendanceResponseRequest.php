@@ -5,7 +5,6 @@ namespace App\Http\Requests\Activity;
 use App\Enums\AttendanceWorkUnit;
 use App\Models\Activity;
 use App\Models\AttendanceResponse;
-use App\Rules\ValidIdentityNumber;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -26,18 +25,23 @@ class UpdateAttendanceResponseRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'nik' => ['nullable', 'string', 'max:32', new ValidIdentityNumber('Format NIK tidak valid.')],
-            'nip' => ['nullable', 'string', 'max:32', new ValidIdentityNumber('Format NIP tidak valid.')],
+            'nip' => ['required', 'string', 'max:50'],
             'position' => ['nullable', 'string', 'max:255'],
             'work_unit' => ['required', Rule::enum(AttendanceWorkUnit::class)],
             'institution_name' => ['nullable', 'string', 'max:255'],
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'nip.required' => 'NIP wajib diisi. Jika tidak memiliki NIP, isi dengan 0 atau -.',
+        ];
+    }
+
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'nik' => $this->normalizeOptionalInput('nik'),
             'nip' => $this->normalizeOptionalInput('nip'),
         ]);
     }

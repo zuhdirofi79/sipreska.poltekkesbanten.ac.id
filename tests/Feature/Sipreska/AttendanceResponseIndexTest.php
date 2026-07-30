@@ -177,11 +177,11 @@ class AttendanceResponseIndexTest extends TestCase
             ->assertDontSee('Citra Dewi');
     }
 
-    public function test_search_by_nik_nip_and_legacy_identity_works(): void
+    public function test_search_by_nip_and_legacy_identity_works(): void
     {
         [$admin, $activity, $form] = $this->activityWithForm();
         $this->createResponse($form, [
-            'name' => 'Target NIK',
+            'name' => 'Target Legacy',
             'nik' => '5555666677778888',
             'nik_normalized' => '5555666677778888',
             'nip_nik' => null,
@@ -195,11 +195,19 @@ class AttendanceResponseIndexTest extends TestCase
             'nip_nik_normalized' => null,
         ]);
 
+        // Backend may still match archived NIK for old records, but UI no longer labels it.
         $this->actingAs($admin)
             ->get(route('activities.daftar-hadir.responses', ['activity' => $activity, 'search' => '5555666677778888']))
             ->assertOk()
-            ->assertSee('Target NIK')
-            ->assertDontSee('Other Person');
+            ->assertSee('Target Legacy')
+            ->assertDontSee('Other Person')
+            ->assertDontSee('>NIK</th>', false);
+
+        $this->actingAs($admin)
+            ->get(route('activities.daftar-hadir.responses', ['activity' => $activity, 'search' => '9999888877776666']))
+            ->assertOk()
+            ->assertSee('Other Person')
+            ->assertDontSee('Target Legacy');
     }
 
     public function test_filter_by_work_unit_works(): void

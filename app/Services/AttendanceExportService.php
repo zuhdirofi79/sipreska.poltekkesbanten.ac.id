@@ -41,7 +41,6 @@ class AttendanceExportService
             $writer->addRow(Row::fromValues([
                 'No',
                 'Nama',
-                'NIK',
                 'NIP',
                 'Identitas Lama',
                 'Jabatan',
@@ -61,7 +60,6 @@ class AttendanceExportService
                 $writer->addRow(new Row([
                     Cell::fromValue($index + 1),
                     Cell::fromValue($response->name),
-                    Cell::fromValue($this->excelText($response->nik), $textStyle),
                     Cell::fromValue($this->excelText($response->nip), $textStyle),
                     Cell::fromValue($this->excelText($response->legacyIdentity()), $textStyle),
                     Cell::fromValue($response->position ?? '-'),

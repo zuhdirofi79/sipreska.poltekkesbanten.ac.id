@@ -190,7 +190,11 @@ class AttendanceService
 
     public function updateResponse(AttendanceResponse $response, array $data, ?Request $request = null): AttendanceResponse
     {
-        $identity = $this->resolveIdentityFields($data);
+        // Preserve archived NIK values; NIK is no longer collected or edited in UI.
+        $identity = $this->resolveIdentityFields([
+            'nik' => $response->nik,
+            'nip' => $data['nip'] ?? null,
+        ]);
         $form = $response->form;
 
         if ($form === null) {
@@ -205,8 +209,8 @@ class AttendanceService
 
         $response->fill([
             'name' => (string) $data['name'],
-            'nik' => $identity['nik'],
-            'nik_normalized' => $identity['nik_normalized'],
+            'nik' => $response->nik,
+            'nik_normalized' => $response->nik_normalized,
             'nip' => $identity['nip'],
             'nip_normalized' => $identity['nip_normalized'],
             'position' => $data['position'] ?? null,

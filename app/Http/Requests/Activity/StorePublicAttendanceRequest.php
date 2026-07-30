@@ -4,7 +4,6 @@ namespace App\Http\Requests\Activity;
 
 use App\Enums\AttendanceWorkUnit;
 use App\Models\AttendanceForm;
-use App\Rules\ValidIdentityNumber;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -21,7 +20,6 @@ class StorePublicAttendanceRequest extends FormRequest
 
         $rules = [
             'name' => ['required', 'string', 'max:255'],
-            'nik' => ['nullable', 'string', 'max:32', new ValidIdentityNumber('Format NIK tidak valid.')],
             'nip' => ['required', 'string', 'max:50'],
             'position' => ['nullable', 'string', 'max:255'],
             'work_unit' => ['required', Rule::enum(AttendanceWorkUnit::class)],
@@ -48,8 +46,9 @@ class StorePublicAttendanceRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'nik' => $this->normalizeOptionalInput('nik'),
             'nip' => $this->normalizeOptionalInput('nip'),
+            // NIK is no longer collected on the public form; keep DB column as archive-only.
+            'nik' => null,
         ]);
 
         if ($this->input('work_unit') === AttendanceWorkUnit::InstansiLainnya->value) {

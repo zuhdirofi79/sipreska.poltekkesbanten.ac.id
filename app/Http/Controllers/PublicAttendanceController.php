@@ -107,10 +107,6 @@ class PublicAttendanceController extends Controller
             'reference_code' => AttendanceConfirmation::referenceCode($response),
         ];
 
-        if ($response->masked_nik !== null) {
-            $successData['nik_masked'] = $response->masked_nik;
-        }
-
         if ($response->masked_nip !== null) {
             $successData['nip_masked'] = $response->masked_nip;
         }

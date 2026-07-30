@@ -33,10 +33,6 @@
                 <dd class="font-medium text-gray-900">{{ $response->name }}</dd>
             </div>
             <div>
-                <dt class="text-gray-500">NIK</dt>
-                <dd class="font-medium text-gray-900">{{ $response->nik ?? '-' }}</dd>
-            </div>
-            <div>
                 <dt class="text-gray-500">NIP</dt>
                 <dd class="font-medium text-gray-900">{{ $response->nip ?? '-' }}</dd>
             </div>
