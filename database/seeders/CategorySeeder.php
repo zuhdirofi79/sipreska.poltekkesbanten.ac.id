@@ -10,11 +10,12 @@ class CategorySeeder extends Seeder
     public function run(): void
     {
         $categories = [
-            ['name' => 'Rapat', 'slug' => 'rapat'],
-            ['name' => 'Pelatihan', 'slug' => 'pelatihan'],
-            ['name' => 'Webinar', 'slug' => 'webinar'],
+            ['name' => 'Apel', 'slug' => 'apel'],
             ['name' => 'Kunjungan', 'slug' => 'kunjungan'],
             ['name' => 'Lainnya', 'slug' => 'lainnya'],
+            ['name' => 'Pelatihan', 'slug' => 'pelatihan'],
+            ['name' => 'Rapat', 'slug' => 'rapat'],
+            ['name' => 'Webinar', 'slug' => 'webinar'],
         ];
 
         foreach ($categories as $category) {

@@ -90,7 +90,7 @@
                     </div>
                 @endif
 
-                <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+                <div class="mt-8 flex justify-center">
                     <button
                         type="button"
                         class="sipreska-btn-primary"
@@ -98,7 +98,6 @@
                     >
                         Tutup Halaman
                     </button>
-                    <a href="{{ url('/') }}" class="sipreska-btn-secondary text-center">Kembali ke Halaman Utama SIPRESKA</a>
                 </div>
 
                 <p id="close-fallback" class="mt-4 hidden text-center text-xs text-gray-500">

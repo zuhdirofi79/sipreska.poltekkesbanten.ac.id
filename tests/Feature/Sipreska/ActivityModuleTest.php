@@ -5,6 +5,7 @@ namespace Tests\Feature\Sipreska;
 use App\Enums\ActivityStatus;
 use App\Models\Activity;
 use App\Models\AttendanceForm;
+use App\Models\Category;
 use App\Services\ActivityCompletenessService;
 use Tests\Support\SipreskaTestHelpers;
 use Tests\TestCase;
@@ -135,6 +136,41 @@ class ActivityModuleTest extends TestCase
         $response = $this->actingAs($superadmin)->get('/kegiatan?search=Rapat&status=terdaftar&category_id='.$category->id);
         $response->assertOk();
         $response->assertSee('Rapat Rutin');
+    }
+
+    public function test_apel_category_is_available_and_filterable(): void
+    {
+        $superadmin = $this->superadmin();
+        $unit = $this->unitBySlug('direktorat');
+        $apel = Category::query()->where('slug', 'apel')->firstOrFail();
+
+        $this->actingAs($superadmin)
+            ->get(route('activities.index'))
+            ->assertOk()
+            ->assertSee('Apel');
+
+        $this->actingAs($superadmin)
+            ->get(route('activities.create'))
+            ->assertOk()
+            ->assertSee('Apel');
+
+        $this->actingAs($superadmin)
+            ->post(route('activities.store'), array_merge($this->activityPayload($unit->id), [
+                'title' => 'Apel Seluruh Pegawai',
+                'category_id' => $apel->id,
+            ]))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('activities', [
+            'title' => 'Apel Seluruh Pegawai',
+            'category_id' => $apel->id,
+        ]);
+
+        $this->actingAs($superadmin)
+            ->get('/kegiatan?category_id='.$apel->id)
+            ->assertOk()
+            ->assertSee('Apel Seluruh Pegawai')
+            ->assertSee('Apel');
     }
 
     public function test_end_time_validation(): void
