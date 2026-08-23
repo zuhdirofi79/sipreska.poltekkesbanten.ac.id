@@ -19,6 +19,9 @@
                     <a href="{{ route('activities.index') }}" class="sipreska-sidebar-link {{ request()->routeIs('activities.*') ? 'is-active' : '' }}">
                         Agenda Kegiatan
                     </a>
+                    <a href="{{ route('external-activities.index') }}" class="sipreska-sidebar-link {{ request()->routeIs('external-activities.*') ? 'is-active' : '' }}">
+                        Agenda Kegiatan Eksternal
+                    </a>
                     <a href="{{ route('calendar.index') }}" class="sipreska-sidebar-link {{ request()->routeIs('calendar.*') ? 'is-active' : '' }}">
                         Kalender Kegiatan
                     </a>

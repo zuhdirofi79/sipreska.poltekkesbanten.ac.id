@@ -129,5 +129,15 @@
                 </span>
             @endforeach
         </div>
+        <div class="flex flex-wrap gap-3 text-xs text-gray-500">
+            <span class="inline-flex items-center gap-1">
+                <span class="h-2.5 w-2.5 rounded-full bg-gray-400"></span>
+                Agenda Internal (warna sesuai status)
+            </span>
+            <span class="inline-flex items-center gap-1">
+                <span class="h-2.5 w-2.5 rounded-full" style="background-color: {{ \App\Enums\ExternalActivityStatus::CALENDAR_COLOR }}"></span>
+                Agenda Eksternal
+            </span>
+        </div>
     </div>
 @endsection

@@ -46,7 +46,7 @@ class AttendanceShortLinkTest extends TestCase
             'name' => 'Andi Wijaya',
             'nip' => '198001012020031001',
             'position' => 'Staff',
-            'work_unit' => AttendanceWorkUnit::D3Kebidanan->value,
+            'work_unit' => AttendanceWorkUnit::Kebidanan->value,
         ], $overrides);
     }
 

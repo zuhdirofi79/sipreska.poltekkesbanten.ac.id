@@ -22,7 +22,7 @@ class StorePublicAttendanceRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'nip' => ['required', 'string', 'max:50'],
             'position' => ['nullable', 'string', 'max:255'],
-            'work_unit' => ['required', Rule::enum(AttendanceWorkUnit::class)],
+            'work_unit' => ['required', Rule::enum(AttendanceWorkUnit::class)->only(AttendanceWorkUnit::publicFormCases())],
             'institution_name' => ['nullable', 'string', 'max:255'],
             'website' => ['prohibited'],
         ];
@@ -50,12 +50,6 @@ class StorePublicAttendanceRequest extends FormRequest
             // NIK is no longer collected on the public form; keep DB column as archive-only.
             'nik' => null,
         ]);
-
-        if ($this->input('work_unit') === AttendanceWorkUnit::InstansiLainnya->value) {
-            $this->merge([
-                'institution_name' => trim((string) $this->input('institution_name')),
-            ]);
-        }
     }
 
     public function withValidator($validator): void
@@ -63,11 +57,6 @@ class StorePublicAttendanceRequest extends FormRequest
         $validator->after(function ($validator): void {
             if ($this->filled('website')) {
                 $validator->errors()->add('name', 'Permintaan tidak valid.');
-            }
-
-            if ($this->input('work_unit') === AttendanceWorkUnit::InstansiLainnya->value
-                && ! $this->filled('institution_name')) {
-                $validator->errors()->add('institution_name', 'Nama instansi wajib diisi.');
             }
         });
     }

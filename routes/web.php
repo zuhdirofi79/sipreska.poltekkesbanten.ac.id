@@ -14,11 +14,15 @@ use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ExternalActivityController;
+use App\Http\Controllers\ExternalAttendanceController;
+use App\Http\Controllers\ExternalAttendanceFileController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\LegacyFormRedirectController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\OfflineAttendanceImportController;
 use App\Http\Controllers\PublicAttendanceController;
+use App\Http\Controllers\PublicExternalAttendanceController;
 use App\Http\Controllers\PublicFormController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UserController;
@@ -67,6 +71,33 @@ Route::prefix('a/{short_code}')
             ->name('store');
     });
 
+// Public external attendance — isolated from existing /absensi and /a/{short_code}.
+Route::prefix('absensi-eksternal/{public_token}')
+    ->name('attendance.external.')
+    ->group(function (): void {
+        Route::get('/berhasil', [PublicExternalAttendanceController::class, 'success'])
+            ->name('success');
+
+        Route::get('/', [PublicExternalAttendanceController::class, 'show'])
+            ->name('show');
+
+        Route::post('/', [PublicExternalAttendanceController::class, 'store'])
+            ->middleware('throttle:10,1')
+            ->name('store');
+    });
+
+Route::prefix('ae/{short_code}')
+    ->where(['short_code' => '[A-HJ-NP-Za-hj-np-z2-9]{6,12}'])
+    ->name('attendance.external.short.')
+    ->group(function (): void {
+        Route::get('/', [PublicExternalAttendanceController::class, 'showByShortCode'])
+            ->name('show');
+
+        Route::post('/', [PublicExternalAttendanceController::class, 'storeByShortCode'])
+            ->middleware('throttle:10,1')
+            ->name('store');
+    });
+
 Route::middleware(['auth', 'active', 'custom.app'])->group(function () {
     Route::get('/ganti-password', [ChangePasswordController::class, 'edit'])->name('password.change');
     Route::put('/ganti-password', [ChangePasswordController::class, 'update'])->name('password.update');
@@ -76,6 +107,28 @@ Route::middleware(['auth', 'active', 'custom.app', 'password.changed'])->group(f
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/kalender', [CalendarController::class, 'index'])->name('calendar.index');
     Route::get('/kalender/events', [CalendarController::class, 'events'])->name('calendar.events');
+
+    Route::prefix('kegiatan-eksternal')->name('external-activities.')->group(function () {
+        Route::get('/', [ExternalActivityController::class, 'index'])->name('index');
+        Route::get('/create', [ExternalActivityController::class, 'create'])->name('create');
+        Route::post('/', [ExternalActivityController::class, 'store'])->name('store');
+
+        Route::get('/{external_activity}/daftar-hadir', [ExternalAttendanceController::class, 'index'])->name('attendance.index');
+        Route::get('/{external_activity}/daftar-hadir/export-excel', [ExternalAttendanceController::class, 'exportExcel'])->name('attendance.export-excel');
+        Route::get('/{external_activity}/daftar-hadir/export-pdf', [ExternalAttendanceController::class, 'exportPdf'])->name('attendance.export-pdf');
+        Route::get('/{external_activity}/daftar-hadir/{participant}', [ExternalAttendanceController::class, 'show'])->name('attendance.show');
+        Route::get('/{external_activity}/daftar-hadir/{participant}/edit', [ExternalAttendanceController::class, 'edit'])->name('attendance.edit');
+        Route::put('/{external_activity}/daftar-hadir/{participant}', [ExternalAttendanceController::class, 'update'])->name('attendance.update');
+        Route::delete('/{external_activity}/daftar-hadir/{participant}', [ExternalAttendanceController::class, 'destroy'])->name('attendance.destroy');
+        Route::get('/{external_activity}/tanda-tangan/{participant}', [ExternalAttendanceFileController::class, 'signature'])->name('files.signature');
+
+        Route::post('/{external_activity}/buka', [ExternalActivityController::class, 'open'])->name('open');
+        Route::post('/{external_activity}/tutup', [ExternalActivityController::class, 'close'])->name('close');
+        Route::get('/{external_activity}/edit', [ExternalActivityController::class, 'edit'])->name('edit');
+        Route::get('/{external_activity}', [ExternalActivityController::class, 'show'])->name('show');
+        Route::put('/{external_activity}', [ExternalActivityController::class, 'update'])->name('update');
+        Route::delete('/{external_activity}', [ExternalActivityController::class, 'destroy'])->name('destroy');
+    });
 
     Route::get('/profil', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profil', [ProfileController::class, 'update'])->name('profile.update');

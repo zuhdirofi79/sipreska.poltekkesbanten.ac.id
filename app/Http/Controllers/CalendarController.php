@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ExternalActivityStatus;
 use App\Models\Activity;
+use App\Models\ExternalActivity;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -35,7 +38,7 @@ class CalendarController extends Controller
             ->all();
 
         return view('calendar.index', [
-            'events' => $activities,
+            'events' => array_values(array_merge($activities, $this->externalCalendarEvents($request->user()))),
         ]);
     }
 
@@ -68,6 +71,108 @@ class CalendarController extends Controller
                 ],
             ]);
 
-        return response()->json($activities);
+        return response()->json(
+            $activities->concat($this->externalCalendarJsonEvents($request->user(), $start, $end))->values()
+        );
+    }
+
+    /**
+     * Additive calendar source for external activities. Does not alter internal activity mapping.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function externalCalendarEvents(?User $user): array
+    {
+        if ($user === null || ! $user->can('viewAny', ExternalActivity::class)) {
+            return [];
+        }
+
+        $events = [];
+
+        ExternalActivity::query()
+            ->with('dates')
+            ->orderBy('title')
+            ->get()
+            ->each(function (ExternalActivity $activity) use (&$events): void {
+                foreach ($activity->dates as $date) {
+                    $dateKey = $date->event_date?->format('Y-m-d');
+
+                    if ($dateKey === null) {
+                        continue;
+                    }
+
+                    $events[] = [
+                        'id' => 'ext-'.$activity->id.'-'.$dateKey,
+                        'title' => $activity->title,
+                        'date' => $dateKey,
+                        'start' => null,
+                        'end' => null,
+                        'location' => '',
+                        'status' => $activity->status->label(),
+                        'statusLabel' => $activity->status->label(),
+                        'color' => ExternalActivityStatus::CALENDAR_COLOR,
+                        'category' => 'Eksternal',
+                        'unit' => 'Eksternal',
+                        'url' => route('external-activities.show', $activity),
+                        'event_type' => 'external',
+                        'time' => '',
+                        'dateLabel' => $date->event_date?->translatedFormat('d M Y'),
+                    ];
+                }
+            });
+
+        return $events;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function externalCalendarJsonEvents(?User $user, string $start, string $end): array
+    {
+        if ($user === null || ! $user->can('viewAny', ExternalActivity::class)) {
+            return [];
+        }
+
+        $events = [];
+
+        ExternalActivity::query()
+            ->with('dates')
+            ->orderBy('title')
+            ->get()
+            ->each(function (ExternalActivity $activity) use (&$events, $start, $end): void {
+                foreach ($activity->dates as $date) {
+                    $dateKey = $date->event_date?->format('Y-m-d');
+
+                    if ($dateKey === null) {
+                        continue;
+                    }
+
+                    if ($start !== '' && $dateKey < $start) {
+                        continue;
+                    }
+
+                    if ($end !== '' && $dateKey > $end) {
+                        continue;
+                    }
+
+                    $events[] = [
+                        'id' => 'ext-'.$activity->id.'-'.$dateKey,
+                        'title' => $activity->title,
+                        'start' => $dateKey,
+                        'url' => route('external-activities.show', $activity),
+                        'backgroundColor' => ExternalActivityStatus::CALENDAR_COLOR,
+                        'borderColor' => ExternalActivityStatus::CALENDAR_COLOR,
+                        'extendedProps' => [
+                            'status' => $activity->status->label(),
+                            'location' => '',
+                            'category' => 'Eksternal',
+                            'unit' => 'Eksternal',
+                            'event_type' => 'external',
+                        ],
+                    ];
+                }
+            });
+
+        return $events;
     }
 }

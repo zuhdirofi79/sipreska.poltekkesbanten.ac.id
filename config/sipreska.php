@@ -76,6 +76,12 @@ return [
         'signature' => 'tanda_tangan',
     ],
 
+    /*
+    | Isolated from document_folders so Activity file purge cannot
+    | collide with external attendance signatures that share numeric IDs.
+    */
+    'external_signature_folder' => 'tanda_tangan_eksternal',
+
     'blocked_extensions' => [
         'php', 'phtml', 'phar', 'cgi', 'pl', 'py', 'sh', 'htaccess', 'exe', 'bat', 'cmd', 'com', 'js', 'html', 'htm',
     ],

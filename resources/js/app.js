@@ -1,4 +1,5 @@
 import Alpine from 'alpinejs';
+import { registerExternalAgendaAlpine } from './external-agenda';
 
 window.Alpine = Alpine;
 
@@ -692,6 +693,8 @@ document.addEventListener('alpine:init', () => {
             }
         },
     }));
+
+    registerExternalAgendaAlpine(Alpine);
 });
 
 Alpine.start();

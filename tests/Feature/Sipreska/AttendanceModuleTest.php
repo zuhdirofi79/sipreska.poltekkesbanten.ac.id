@@ -35,15 +35,16 @@ class AttendanceModuleTest extends TestCase
         return $form;
     }
 
-    private function payload(): array
+    /** @param array<string, mixed> $overrides */
+    private function payload(array $overrides = []): array
     {
-        return [
+        return array_merge([
             'name' => 'Andi Wijaya',
             'nip' => '198001012020031001',
             'position' => 'Staff',
-            'work_unit' => AttendanceWorkUnit::D3Kebidanan->value,
+            'work_unit' => AttendanceWorkUnit::Kebidanan->value,
             'signature_data' => $this->minimalPngBase64(),
-        ];
+        ], $overrides);
     }
 
     public function test_active_form_can_be_submitted(): void
@@ -61,7 +62,43 @@ class AttendanceModuleTest extends TestCase
             'attendance_form_id' => $form->id,
             'nip_normalized' => '198001012020031001',
             'nik' => null,
+            'work_unit' => AttendanceWorkUnit::Kebidanan->value,
         ]);
+    }
+
+    public function test_public_form_work_unit_dropdown_only_shows_four_new_units(): void
+    {
+        $activity = Activity::factory()->create([
+            'unit_id' => $this->unitBySlug('d3-kebidanan')->id,
+            'category_id' => $this->defaultCategory()->id,
+        ]);
+        $form = $this->openForm($activity);
+
+        $this->get(route('attendance.public.show', ['public_token' => $form->public_token]))
+            ->assertOk()
+            ->assertSee('Direktorat', false)
+            ->assertSee('Keperawatan', false)
+            ->assertSee('Kebidanan', false)
+            ->assertSee('Teknologi Laboratorium Medis', false)
+            ->assertDontSee('D3 Keperawatan', false)
+            ->assertDontSee('D3 Kebidanan', false)
+            ->assertDontSee('D3 TLM', false)
+            ->assertDontSee('STR Ners', false)
+            ->assertDontSee('Instansi Lainnya', false)
+            ->assertDontSee('Nama Instansi', false);
+    }
+
+    public function test_public_form_rejects_legacy_work_unit_values(): void
+    {
+        $activity = Activity::factory()->create([
+            'unit_id' => $this->unitBySlug('d3-kebidanan')->id,
+            'category_id' => $this->defaultCategory()->id,
+        ]);
+        $form = $this->openForm($activity);
+
+        $this->post(route('attendance.public.store', $form->public_token), $this->payload([
+            'work_unit' => AttendanceWorkUnit::D3Kebidanan->value,
+        ]))->assertSessionHasErrors('work_unit');
     }
 
     public function test_closed_form_is_rejected(): void

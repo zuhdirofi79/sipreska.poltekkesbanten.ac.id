@@ -40,7 +40,6 @@
                     action="{{ \App\Support\AttendancePublicRoutes::storeUrlForForm($attendanceForm) }}"
                     x-ref="form"
                     x-data="attendanceConfirmation({ required: {{ $attendanceForm->signature_required ? 'true' : 'false' }} })"
-                    x-init="showInstitution = '{{ old('work_unit') }}' === '{{ \App\Enums\AttendanceWorkUnit::InstansiLainnya->value }}'"
                     @submit="handleFormSubmit($event)"
                     class="space-y-4"
                     data-public-attendance-form
@@ -69,15 +68,10 @@
                         label="Unit Kerja"
                         name="work_unit"
                         placeholder="Pilih unit kerja"
-                        :options="collect(\App\Enums\AttendanceWorkUnit::cases())->mapWithKeys(fn ($u) => [$u->value => $u->label()])"
+                        :options="\App\Enums\AttendanceWorkUnit::publicFormOptions()"
                         :selected="old('work_unit')"
                         required
-                        x-on:change="showInstitution = $event.target.value === '{{ \App\Enums\AttendanceWorkUnit::InstansiLainnya->value }}'"
                     />
-
-                    <div x-show="showInstitution || '{{ old('work_unit') }}' === '{{ \App\Enums\AttendanceWorkUnit::InstansiLainnya->value }}'" x-cloak>
-                        <x-form-input label="Nama Instansi" name="institution_name" :value="old('institution_name')" />
-                    </div>
 
                     @if ($attendanceForm->signature_required)
                         <div>
