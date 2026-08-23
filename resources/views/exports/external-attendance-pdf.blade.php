@@ -28,6 +28,12 @@
             {{ $activity->dates->map(fn ($date) => $date->event_date?->locale('id')->translatedFormat('d F Y'))->implode(', ') }}
         </div>
         <div><strong>Status:</strong> {{ $activity->status->label() }}</div>
+        @if ($activity->hasOfflineLocation())
+            <div><strong>Lokasi Offline:</strong> {{ $activity->location_address }}</div>
+        @endif
+        @if ($activity->hasOnlineUrl())
+            <div><strong>Link Online:</strong> {{ $activity->online_url }}</div>
+        @endif
         <div><strong>Dicetak:</strong> {{ $generatedAt }}</div>
     </div>
 

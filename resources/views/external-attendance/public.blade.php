@@ -13,6 +13,25 @@
                 <p class="mt-2 text-sm text-gray-500">
                     {{ $activity->dates->map(fn ($date) => $date->event_date?->translatedFormat('d F Y'))->implode(' · ') }}
                 </p>
+                @if ($activity->hasOfflineLocation() || $activity->hasOnlineUrl())
+                    <div class="mt-3 space-y-1 text-sm text-gray-600">
+                        @if ($activity->hasOfflineLocation())
+                            <p>{{ $activity->location_address }}</p>
+                        @endif
+                        @if ($activity->hasOnlineUrl())
+                            <p>
+                                <a
+                                    href="{{ $activity->online_url }}"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="font-medium text-blue-600 hover:underline"
+                                >
+                                    Buka Link Meeting
+                                </a>
+                            </p>
+                        @endif
+                    </div>
+                @endif
             </div>
 
             @if ($duplicateSubmission ?? false)

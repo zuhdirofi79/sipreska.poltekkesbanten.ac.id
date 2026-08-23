@@ -20,6 +20,8 @@ class ExternalActivity extends Model
 
     protected $fillable = [
         'title',
+        'location_address',
+        'online_url',
         'status',
         'public_token',
         'short_code',
@@ -120,6 +122,16 @@ class ExternalActivity extends Model
         }
 
         return true;
+    }
+
+    public function hasOfflineLocation(): bool
+    {
+        return filled($this->location_address);
+    }
+
+    public function hasOnlineUrl(): bool
+    {
+        return filled($this->online_url);
     }
 
     public function allowedDateStrings(): array

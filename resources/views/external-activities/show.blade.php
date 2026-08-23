@@ -54,6 +54,27 @@
                             @endif
                         </dd>
                     </div>
+                    @if ($activity->hasOfflineLocation())
+                        <div class="sm:col-span-2">
+                            <dt class="text-gray-500">Lokasi Offline</dt>
+                            <dd class="whitespace-pre-line font-medium text-gray-900">{{ $activity->location_address }}</dd>
+                        </div>
+                    @endif
+                    @if ($activity->hasOnlineUrl())
+                        <div class="sm:col-span-2">
+                            <dt class="text-gray-500">Kegiatan Online</dt>
+                            <dd>
+                                <a
+                                    href="{{ $activity->online_url }}"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="font-medium text-blue-600 hover:underline"
+                                >
+                                    Buka Link Meeting
+                                </a>
+                            </dd>
+                        </div>
+                    @endif
                 </dl>
             </x-card>
 

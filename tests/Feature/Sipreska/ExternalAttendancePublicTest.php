@@ -71,6 +71,34 @@ class ExternalAttendancePublicTest extends TestCase
             ->assertDontSee('type="radio"', false);
     }
 
+    public function test_public_page_shows_location_when_available(): void
+    {
+        $offlineAddress = 'Gedung Graha Bina Husada, Kampus Tangerang';
+        $onlineUrl = 'https://meet.example.com/j/123?pwd=sample';
+
+        $activity = $this->createEvent(overrides: [
+            'location_address' => $offlineAddress,
+            'online_url' => $onlineUrl,
+        ]);
+
+        $this->get(ExternalAttendancePublicRoutes::showUrlForActivity($activity))
+            ->assertOk()
+            ->assertSee($offlineAddress, false)
+            ->assertSee('Buka Link Meeting', false);
+    }
+
+    public function test_public_page_hides_location_section_when_empty(): void
+    {
+        $activity = $this->createEvent(overrides: [
+            'location_address' => null,
+            'online_url' => null,
+        ]);
+
+        $this->get(ExternalAttendancePublicRoutes::showUrlForActivity($activity))
+            ->assertOk()
+            ->assertDontSee('Buka Link Meeting', false);
+    }
+
     public function test_long_token_url_also_opens(): void
     {
         $activity = $this->createEvent();

@@ -61,6 +61,8 @@ class ExternalActivityController extends Controller
         $activity = DB::transaction(function () use ($request, $user) {
             $activity = ExternalActivity::query()->create([
                 'title' => $request->string('title')->toString(),
+                'location_address' => $request->validated('location_address'),
+                'online_url' => $request->validated('online_url'),
                 'status' => $request->enum('status', ExternalActivityStatus::class) ?? ExternalActivityStatus::Terdaftar,
                 'is_open' => $request->boolean('is_open', true),
                 'signature_required' => true,
@@ -76,7 +78,7 @@ class ExternalActivityController extends Controller
                 'external_activity_created',
                 $activity,
                 null,
-                $activity->only(['title', 'status', 'is_open']),
+                $activity->only(['title', 'status', 'is_open', 'location_address']),
                 $request,
             );
 
@@ -115,12 +117,14 @@ class ExternalActivityController extends Controller
 
     public function update(UpdateExternalActivityRequest $request, ExternalActivity $externalActivity): RedirectResponse
     {
-        $oldValues = $externalActivity->only(['title', 'status', 'is_open', 'opens_at', 'closes_at']);
+        $oldValues = $externalActivity->only(['title', 'status', 'is_open', 'opens_at', 'closes_at', 'location_address']);
 
         try {
             DB::transaction(function () use ($request, $externalActivity) {
                 $externalActivity->fill([
                     'title' => $request->string('title')->toString(),
+                    'location_address' => $request->validated('location_address'),
+                    'online_url' => $request->validated('online_url'),
                     'status' => $request->enum('status', ExternalActivityStatus::class),
                     'opens_at' => $request->input('opens_at'),
                     'closes_at' => $request->input('closes_at'),
@@ -142,7 +146,7 @@ class ExternalActivityController extends Controller
             'external_activity_updated',
             $externalActivity,
             $oldValues,
-            $externalActivity->only(['title', 'status', 'is_open', 'opens_at', 'closes_at']),
+            $externalActivity->only(['title', 'status', 'is_open', 'opens_at', 'closes_at', 'location_address']),
             $request,
         );
 

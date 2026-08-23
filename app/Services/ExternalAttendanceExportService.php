@@ -50,6 +50,8 @@ class ExternalAttendanceExportService
                 'Nama Kegiatan',
                 'Tanggal Kegiatan',
                 'Status Kegiatan',
+                'Lokasi Offline',
+                'Link Kegiatan Online',
             ], $headerStyle));
 
             foreach ($participants as $index => $participant) {
@@ -64,6 +66,8 @@ class ExternalAttendanceExportService
                     Cell::fromValue($activity->title),
                     Cell::fromValue($eventDates !== '' ? $eventDates : '-'),
                     Cell::fromValue($activity->status->label()),
+                    Cell::fromValue($this->excelText($activity->location_address)),
+                    Cell::fromValue($this->excelText($activity->online_url), $textStyle),
                 ]));
             }
 

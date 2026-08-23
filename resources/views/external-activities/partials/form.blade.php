@@ -50,6 +50,37 @@
         :value="$editing && $activity->closes_at ? $activity->closes_at->format('Y-m-d\TH:i') : null"
     />
 
+    <div class="md:col-span-2 space-y-3">
+        <div>
+            <h3 class="text-sm font-semibold text-gray-900">Lokasi Kegiatan</h3>
+            <p class="mt-1 text-xs text-gray-500">
+                Kosongkan keduanya jika lokasi belum ditentukan. Isi salah satu jika hanya offline atau online. Isi keduanya jika kegiatan bersifat hybrid.
+            </p>
+        </div>
+
+        <div>
+            <label for="location_address" class="mb-1 block text-sm font-medium text-gray-700">Alamat / Lokasi Offline</label>
+            <textarea
+                id="location_address"
+                name="location_address"
+                rows="3"
+                class="sipreska-textarea"
+            >{{ old('location_address', $editing ? $activity->location_address : '') }}</textarea>
+            <p class="mt-1 text-xs text-gray-500">Opsional. Isi alamat jika kegiatan berlangsung secara offline.</p>
+            @error('location_address')
+                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+            @enderror
+        </div>
+
+        <x-form-input
+            label="Link Kegiatan Online"
+            name="online_url"
+            type="url"
+            :value="$editing ? $activity->online_url : null"
+            hint="Opsional. Isi link jika kegiatan memiliki sesi online."
+        />
+    </div>
+
     <div
         class="md:col-span-2"
         x-data="externalActivityDates(@js($dateValues), @js($lockedDates))"
