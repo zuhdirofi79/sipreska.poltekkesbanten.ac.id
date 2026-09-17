@@ -26,6 +26,7 @@ class ExternalAttendanceExportService
             ->participantsQuery($activity, $filters)
             ->get();
         $filename = $this->buildFilename($activity, 'xlsx');
+        $activity->loadMissing('questions');
         $eventDates = $activity->dates
             ->map(fn ($date) => $date->event_date?->format('Y-m-d'))
             ->filter()
@@ -36,14 +37,19 @@ class ExternalAttendanceExportService
             $writer->getOptions()->setColumnWidth(14, 10);
             $writer->openToFile('php://output');
 
+            $questionColumns = $activity->questions
+                ->map(fn ($question) => $question->label)
+                ->all();
+
             $headerStyle = (new Style)->setFontBold();
             $textStyle = (new Style)->setFormat('@');
 
-            $writer->addRow(Row::fromValues([
+            $writer->addRow(Row::fromValues(array_merge([
                 'No',
                 'Full Name',
                 'Institution',
                 'Email Address',
+            ], $questionColumns, [
                 'Attendance Date',
                 'Waktu Submit',
                 'Tanda Tangan',
@@ -52,14 +58,19 @@ class ExternalAttendanceExportService
                 'Status Kegiatan',
                 'Lokasi Offline',
                 'Link Kegiatan Online',
-            ], $headerStyle));
+            ]), $headerStyle));
 
             foreach ($participants as $index => $participant) {
-                $writer->addRow(new Row([
+                $customAnswers = $activity->questions
+                    ->map(fn ($question) => $this->excelText($participant->displayedAnswerFor($question)))
+                    ->all();
+
+                $writer->addRow(new Row(array_merge([
                     Cell::fromValue($index + 1),
                     Cell::fromValue($participant->full_name),
                     Cell::fromValue($participant->institution),
                     Cell::fromValue($this->excelText($participant->email), $textStyle),
+                ], array_map(fn ($value) => Cell::fromValue($value, $textStyle), $customAnswers), [
                     Cell::fromValue($participant->formattedAttendanceDates('d M Y')),
                     Cell::fromValue(DateTimeFormatter::display($participant->submitted_at)),
                     Cell::fromValue(ExternalAttendanceSignatureExport::excelLabel($participant)),
@@ -68,7 +79,7 @@ class ExternalAttendanceExportService
                     Cell::fromValue($activity->status->label()),
                     Cell::fromValue($this->excelText($activity->location_address)),
                     Cell::fromValue($this->excelText($activity->online_url), $textStyle),
-                ]));
+                ])));
             }
 
             $writer->close();
@@ -84,6 +95,7 @@ class ExternalAttendanceExportService
             ->participantsQuery($activity, $filters)
             ->get();
         $filename = $this->buildFilename($activity, 'pdf');
+        $activity->loadMissing('questions');
 
         $pdf = Pdf::loadView('exports.external-attendance-pdf', [
             'activity' => $activity,

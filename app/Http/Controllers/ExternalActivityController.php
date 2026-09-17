@@ -7,6 +7,7 @@ use App\Http\Requests\ExternalActivity\StoreExternalActivityRequest;
 use App\Http\Requests\ExternalActivity\UpdateExternalActivityRequest;
 use App\Models\ExternalActivity;
 use App\Services\AuditLogService;
+use App\Services\ExternalActivityQuestionService;
 use App\Services\ExternalAttendanceService;
 use App\Support\ExternalAttendancePublicRoutes;
 use Illuminate\Http\RedirectResponse;
@@ -20,6 +21,7 @@ class ExternalActivityController extends Controller
     public function __construct(
         private readonly AuditLogService $auditLog,
         private readonly ExternalAttendanceService $attendanceService,
+        private readonly ExternalActivityQuestionService $questionService,
     ) {}
 
     public function index(Request $request): View
@@ -51,6 +53,7 @@ class ExternalActivityController extends Controller
 
         return view('external-activities.create', [
             'statuses' => ExternalActivityStatus::cases(),
+            'defaultQuestions' => $this->questionService->defaultQuestionTemplates(),
         ]);
     }
 
@@ -66,6 +69,7 @@ class ExternalActivityController extends Controller
                 'status' => $request->enum('status', ExternalActivityStatus::class) ?? ExternalActivityStatus::Terdaftar,
                 'is_open' => $request->boolean('is_open', true),
                 'signature_required' => true,
+                'use_custom_questions' => $request->boolean('use_custom_questions'),
                 'opens_at' => $request->input('opens_at'),
                 'closes_at' => $request->input('closes_at'),
                 'created_by' => $user?->id,
@@ -74,11 +78,15 @@ class ExternalActivityController extends Controller
 
             $this->attendanceService->syncDates($activity, $request->input('dates', []));
 
+            if ($activity->use_custom_questions) {
+                $this->questionService->syncOrSeed($activity, $request->input('questions'));
+            }
+
             $this->auditLog->logModelChange(
                 'external_activity_created',
                 $activity,
                 null,
-                $activity->only(['title', 'status', 'is_open', 'location_address']),
+                $activity->only(['title', 'status', 'is_open', 'location_address', 'use_custom_questions']),
                 $request,
             );
 
@@ -94,7 +102,7 @@ class ExternalActivityController extends Controller
     {
         $this->authorize('view', $externalActivity);
 
-        $externalActivity->load(['dates', 'creator', 'updater']);
+        $externalActivity->load(['dates', 'creator', 'updater', 'questions']);
 
         return view('external-activities.show', [
             'activity' => $externalActivity,
@@ -107,17 +115,21 @@ class ExternalActivityController extends Controller
     {
         $this->authorize('update', $externalActivity);
 
-        $externalActivity->load(['dates' => fn ($query) => $query->withCount('participants')]);
+        $externalActivity->load([
+            'dates' => fn ($query) => $query->withCount('participants'),
+            'questions',
+        ]);
 
         return view('external-activities.edit', [
             'activity' => $externalActivity,
             'statuses' => ExternalActivityStatus::cases(),
+            'defaultQuestions' => $this->questionService->defaultQuestionTemplates(),
         ]);
     }
 
     public function update(UpdateExternalActivityRequest $request, ExternalActivity $externalActivity): RedirectResponse
     {
-        $oldValues = $externalActivity->only(['title', 'status', 'is_open', 'opens_at', 'closes_at', 'location_address']);
+        $oldValues = $externalActivity->only(['title', 'status', 'is_open', 'opens_at', 'closes_at', 'location_address', 'use_custom_questions']);
 
         try {
             DB::transaction(function () use ($request, $externalActivity) {
@@ -135,8 +147,16 @@ class ExternalActivityController extends Controller
                     $externalActivity->is_open = $request->boolean('is_open');
                 }
 
+                if ($request->has('use_custom_questions')) {
+                    $externalActivity->use_custom_questions = $request->boolean('use_custom_questions');
+                }
+
                 $externalActivity->save();
                 $this->attendanceService->syncDates($externalActivity, $request->input('dates', []));
+
+                if ($externalActivity->use_custom_questions) {
+                    $this->questionService->syncOrSeed($externalActivity, $request->input('questions'));
+                }
             });
         } catch (RuntimeException $exception) {
             return back()->withErrors(['dates' => $exception->getMessage()])->withInput();
@@ -146,7 +166,7 @@ class ExternalActivityController extends Controller
             'external_activity_updated',
             $externalActivity,
             $oldValues,
-            $externalActivity->only(['title', 'status', 'is_open', 'opens_at', 'closes_at', 'location_address']),
+            $externalActivity->only(['title', 'status', 'is_open', 'opens_at', 'closes_at', 'location_address', 'use_custom_questions']),
             $request,
         );
 

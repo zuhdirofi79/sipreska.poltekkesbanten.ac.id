@@ -44,6 +44,9 @@
                 <th>Full Name</th>
                 <th>Institution</th>
                 <th>Email Address</th>
+                @foreach ($activity->questions as $question)
+                    <th>{{ $question->label }}</th>
+                @endforeach
                 <th>Attendance Date</th>
                 <th>Waktu Submit</th>
                 <th class="signature-cell">TTD</th>
@@ -57,6 +60,9 @@
                     <td>{{ $participant->full_name }}</td>
                     <td>{{ $participant->institution }}</td>
                     <td>{{ $participant->email }}</td>
+                    @foreach ($activity->questions as $question)
+                        <td>{{ $participant->displayedAnswerFor($question) }}</td>
+                    @endforeach
                     <td>{{ $participant->formattedAttendanceDates('d M Y') }}</td>
                     <td>{{ \App\Support\DateTimeFormatter::display($participant->submitted_at) }}</td>
                     <td class="signature-cell">

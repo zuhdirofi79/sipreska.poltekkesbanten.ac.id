@@ -20,6 +20,7 @@ class ExternalAttendanceService
 
     public function __construct(
         private readonly AuditLogService $auditLog,
+        private readonly ExternalActivityQuestionService $questionService,
     ) {}
 
     public static function normalizeEmail(string $email): string
@@ -41,7 +42,7 @@ class ExternalAttendanceService
     }
 
     /**
-     * @param  array{full_name: string, institution: string, email: string, attendance_dates: list<string>, signature_data: string}  $data
+     * @param  array{full_name: string, institution: string, email: string, attendance_dates: list<string>, signature_data: string, custom_answers?: array<int|string, mixed>}  $data
      */
     public function submitResponse(ExternalActivity $activity, array $data, Request $request): ExternalAttendanceParticipant
     {
@@ -79,7 +80,12 @@ class ExternalAttendanceService
             ]);
 
             $participant->attendanceDates()->sync($dateIds);
-            $participant->load('attendanceDates');
+            $this->questionService->storeAnswers(
+                $participant,
+                $activity,
+                $data['custom_answers'] ?? [],
+            );
+            $participant->load(['attendanceDates', 'answers.question']);
 
             $this->auditLog->log(
                 'external_attendance_submitted',
@@ -146,6 +152,7 @@ class ExternalAttendanceService
             $disk = $participant->signature_disk ?: $this->disk();
 
             $participant->attendanceDates()->detach();
+            $participant->answers()->delete();
             $participant->delete();
 
             if ($signaturePath !== '' && Storage::disk($disk)->exists($signaturePath)) {
@@ -204,7 +211,7 @@ class ExternalAttendanceService
     {
         $query = ExternalAttendanceParticipant::query()
             ->where('external_activity_id', $activity->id)
-            ->with('attendanceDates');
+            ->with(['attendanceDates', 'answers.question']);
 
         if (! empty($filters['search'])) {
             $term = $filters['search'];

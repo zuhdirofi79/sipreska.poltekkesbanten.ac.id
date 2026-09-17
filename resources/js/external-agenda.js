@@ -224,4 +224,94 @@ export function registerExternalAgendaAlpine(Alpine) {
             }
         },
     }));
+
+    Alpine.data('externalQuestionBuilder', (initialEnabled = false, initialQuestions = [], defaultQuestions = []) => ({
+        enabled: initialEnabled === true || initialEnabled === 1 || initialEnabled === '1' ? '1' : '0',
+        questions: [],
+        defaultQuestions: defaultQuestions,
+
+        init() {
+            this.questions = this.normalizeList(initialQuestions);
+
+            this.$watch('enabled', (value) => {
+                if (this.isEnabledValue(value) && this.questions.length === 0) {
+                    this.questions = this.normalizeList(this.defaultQuestions);
+                }
+            });
+
+            if (this.isEnabled() && this.questions.length === 0) {
+                this.questions = this.normalizeList(this.defaultQuestions);
+            }
+        },
+
+        isEnabled() {
+            return this.isEnabledValue(this.enabled);
+        },
+
+        isEnabledValue(value) {
+            return value === true || value === 1 || value === '1';
+        },
+
+        needsOptions(type) {
+            return ['select', 'radio', 'checkbox'].includes(type);
+        },
+
+        add() {
+            this.questions.push(this.blankQuestion());
+        },
+
+        remove(index) {
+            this.questions.splice(index, 1);
+        },
+
+        moveUp(index) {
+            if (index <= 0) {
+                return;
+            }
+
+            const current = this.questions[index];
+            this.questions.splice(index, 1);
+            this.questions.splice(index - 1, 0, current);
+        },
+
+        moveDown(index) {
+            if (index >= this.questions.length - 1) {
+                return;
+            }
+
+            const current = this.questions[index];
+            this.questions.splice(index, 1);
+            this.questions.splice(index + 1, 0, current);
+        },
+
+        blankQuestion() {
+            return {
+                _key: this.nextKey(),
+                id: null,
+                label: '',
+                type: 'text',
+                is_required: '1',
+                is_active: '1',
+                options_text: '',
+                default_key: null,
+            };
+        },
+
+        normalizeList(list) {
+            return (list || []).map((question) => ({
+                _key: this.nextKey(),
+                id: question.id ?? null,
+                label: question.label ?? '',
+                type: question.type ?? 'text',
+                is_required: String(question.is_required ?? '1') === '1' || question.is_required === true ? '1' : '0',
+                is_active: String(question.is_active ?? '1') === '1' || question.is_active === true ? '1' : '0',
+                options_text: question.options_text ?? '',
+                default_key: question.default_key ?? null,
+            }));
+        },
+
+        nextKey() {
+            return 'q-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+        },
+    }));
 }

@@ -54,6 +54,17 @@
                             @endif
                         </dd>
                     </div>
+                    <div>
+                        <dt class="text-gray-500">Pertanyaan Tambahan</dt>
+                        <dd>
+                            @if ($activity->use_custom_questions)
+                                <x-badge variant="green">Aktif</x-badge>
+                                <span class="ml-2 text-gray-700">{{ $activity->questions->where('is_active', true)->count() }} pertanyaan ditampilkan</span>
+                            @else
+                                <x-badge variant="gray">Nonaktif</x-badge>
+                            @endif
+                        </dd>
+                    </div>
                     @if ($activity->hasOfflineLocation())
                         <div class="sm:col-span-2">
                             <dt class="text-gray-500">Lokasi Offline</dt>

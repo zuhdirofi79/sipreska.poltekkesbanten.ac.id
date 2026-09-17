@@ -59,6 +59,20 @@
             </div>
         </dl>
 
+        @if ($participant->answers->isNotEmpty())
+            <div class="mt-6 border-t border-gray-100 pt-4">
+                <h3 class="text-sm font-medium text-gray-700">Jawaban Pertanyaan Tambahan</h3>
+                <dl class="mt-3 grid gap-4 sm:grid-cols-2 text-sm">
+                    @foreach ($participant->answers->sortBy(fn ($answer) => [$answer->question?->sort_order ?? 999, $answer->question_id]) as $answer)
+                        <div class="{{ ($answer->question?->type?->value === 'textarea') ? 'sm:col-span-2' : '' }}">
+                            <dt class="text-gray-500">{{ $answer->question?->label ?? 'Pertanyaan diarsipkan' }}</dt>
+                            <dd class="font-medium text-gray-900 whitespace-pre-line">{{ $answer->displayValue() }}</dd>
+                        </div>
+                    @endforeach
+                </dl>
+            </div>
+        @endif
+
         <div class="mt-6 border-t border-gray-100 pt-4">
             <h3 class="text-sm font-medium text-gray-700">Tanda Tangan</h3>
             @if ($signatureUrl)

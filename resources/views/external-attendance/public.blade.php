@@ -72,6 +72,15 @@
                     <x-form-input label="Institution" name="institution" :value="old('institution')" required />
                     <x-form-input label="Email Address" name="email" type="email" :value="old('email')" required />
 
+                    @if (($questions ?? collect())->isNotEmpty())
+                        <div class="border-t border-gray-100 pt-4">
+                            <p class="mb-3 text-sm font-semibold text-gray-900">Pertanyaan Tambahan</p>
+                            <div class="space-y-4">
+                                @include('external-attendance.partials.dynamic-questions')
+                            </div>
+                        </div>
+                    @endif
+
                     <div>
                         <label class="mb-2 block text-sm font-medium text-gray-700">
                             Attendance Date <span class="text-red-500">*</span>

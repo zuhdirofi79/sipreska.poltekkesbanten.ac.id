@@ -9,6 +9,8 @@ use Illuminate\Validation\Rule;
 
 class UpdateExternalActivityRequest extends FormRequest
 {
+    use ValidatesExternalActivityQuestions;
+
     public function authorize(): bool
     {
         /** @var ExternalActivity $activity */
@@ -40,7 +42,7 @@ class UpdateExternalActivityRequest extends FormRequest
             'opens_at' => ['nullable', 'date'],
             'closes_at' => ['nullable', 'date', 'after_or_equal:opens_at'],
             'is_open' => ['sometimes', 'boolean'],
-        ];
+        ] + $this->customQuestionRules();
     }
 
     private function nullableTrimmed(string $key): ?string
@@ -61,6 +63,12 @@ class UpdateExternalActivityRequest extends FormRequest
             'dates.min' => 'Minimal satu tanggal kegiatan wajib dipilih.',
             'dates.*.distinct' => 'Tanggal kegiatan tidak boleh duplikat.',
             'online_url.url' => 'Link kegiatan online harus berupa URL yang valid.',
+            'questions.*.label.required' => 'Label pertanyaan wajib diisi.',
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(fn ($validator) => $this->validateQuestionOptions($validator));
     }
 }

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ExternalAttendanceParticipant extends Model
 {
@@ -41,6 +42,29 @@ class ExternalAttendanceParticipant extends Model
             'participant_id',
             'external_activity_date_id',
         )->orderBy('event_date');
+    }
+
+    public function answers(): HasMany
+    {
+        return $this->hasMany(ExternalAttendanceAnswer::class, 'participant_id');
+    }
+
+    public function answerFor(?ExternalActivityQuestion $question): ?ExternalAttendanceAnswer
+    {
+        if ($question === null) {
+            return null;
+        }
+
+        if ($this->relationLoaded('answers')) {
+            return $this->answers->firstWhere('question_id', $question->id);
+        }
+
+        return $this->answers()->where('question_id', $question->id)->first();
+    }
+
+    public function displayedAnswerFor(?ExternalActivityQuestion $question): string
+    {
+        return $this->answerFor($question)?->displayValue() ?? '-';
     }
 
     public function formattedAttendanceDates(?string $format = 'd M Y'): string

@@ -21,6 +21,7 @@ class ExternalActivityFactory extends Factory
             'status' => ExternalActivityStatus::Terdaftar,
             'is_open' => true,
             'signature_required' => true,
+            'use_custom_questions' => false,
             'created_by' => User::factory(),
             'updated_by' => null,
         ];

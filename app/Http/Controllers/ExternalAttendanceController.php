@@ -26,7 +26,7 @@ class ExternalAttendanceController extends Controller
     {
         $this->authorize('manageAttendance', $externalActivity);
 
-        $externalActivity->load('dates');
+        $externalActivity->load(['dates', 'questions']);
         $filters = $request->filters();
 
         $participants = $this->attendanceService
@@ -48,7 +48,7 @@ class ExternalAttendanceController extends Controller
         $this->authorize('manageAttendance', $externalActivity);
         $this->ensureParticipantBelongsToActivity($externalActivity, $participant);
 
-        $participant->load('attendanceDates');
+        $participant->load(['attendanceDates', 'answers.question']);
 
         return view('external-activities.attendance.show', [
             'activity' => $externalActivity,
@@ -61,8 +61,8 @@ class ExternalAttendanceController extends Controller
         $this->authorize('manageAttendance', $externalActivity);
         $this->ensureParticipantBelongsToActivity($externalActivity, $participant);
 
-        $externalActivity->load('dates');
-        $participant->load('attendanceDates');
+        $externalActivity->load(['dates', 'questions']);
+        $participant->load(['attendanceDates', 'answers.question']);
 
         return view('external-activities.attendance.edit', [
             'activity' => $externalActivity,
@@ -108,7 +108,7 @@ class ExternalAttendanceController extends Controller
     {
         $this->authorize('manageAttendance', $externalActivity);
 
-        $externalActivity->load('dates');
+        $externalActivity->load(['dates', 'questions']);
 
         return $this->exportService->exportExcel($externalActivity, $request->filters());
     }
@@ -117,7 +117,7 @@ class ExternalAttendanceController extends Controller
     {
         $this->authorize('manageAttendance', $externalActivity);
 
-        $externalActivity->load('dates');
+        $externalActivity->load(['dates', 'questions']);
 
         return $this->exportService->exportPdf($externalActivity, $request->filters());
     }

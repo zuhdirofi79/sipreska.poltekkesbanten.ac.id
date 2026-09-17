@@ -27,6 +27,7 @@ class ExternalActivity extends Model
         'short_code',
         'is_open',
         'signature_required',
+        'use_custom_questions',
         'opens_at',
         'closes_at',
         'created_by',
@@ -39,6 +40,7 @@ class ExternalActivity extends Model
             'status' => ExternalActivityStatus::class,
             'is_open' => 'boolean',
             'signature_required' => 'boolean',
+            'use_custom_questions' => 'boolean',
             'opens_at' => 'datetime',
             'closes_at' => 'datetime',
         ];
@@ -93,6 +95,16 @@ class ExternalActivity extends Model
     public function participants(): HasMany
     {
         return $this->hasMany(ExternalAttendanceParticipant::class);
+    }
+
+    public function questions(): HasMany
+    {
+        return $this->hasMany(ExternalActivityQuestion::class)->orderBy('sort_order')->orderBy('id');
+    }
+
+    public function activeQuestions(): HasMany
+    {
+        return $this->questions()->where('is_active', true);
     }
 
     public function creator(): BelongsTo

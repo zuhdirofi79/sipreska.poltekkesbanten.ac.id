@@ -61,10 +61,13 @@ class PublicExternalAttendanceController extends Controller
 
     private function renderForm(ExternalActivity $activity): View
     {
-        $activity->load('dates');
+        $activity->load(['dates', 'questions']);
 
         return view('external-attendance.public', [
             'activity' => $activity,
+            'questions' => $activity->use_custom_questions
+                ? $activity->questions->where('is_active', true)->values()
+                : collect(),
             'duplicateSubmission' => session('external_attendance_duplicate', false),
         ]);
     }
@@ -113,7 +116,7 @@ class PublicExternalAttendanceController extends Controller
     private function findByPublicToken(string $publicToken): ExternalActivity
     {
         return ExternalActivity::query()
-            ->with('dates')
+            ->with(['dates', 'questions'])
             ->where('public_token', $publicToken)
             ->firstOrFail();
     }
@@ -121,7 +124,7 @@ class PublicExternalAttendanceController extends Controller
     private function findByShortCode(string $shortCode): ExternalActivity
     {
         return ExternalActivity::query()
-            ->with('dates')
+            ->with(['dates', 'questions'])
             ->where('short_code', strtoupper($shortCode))
             ->firstOrFail();
     }

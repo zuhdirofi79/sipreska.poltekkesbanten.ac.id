@@ -110,6 +110,9 @@
                         <th class="px-4 py-3 font-medium whitespace-nowrap">Full Name</th>
                         <th class="px-4 py-3 font-medium whitespace-nowrap">Institution</th>
                         <th class="px-4 py-3 font-medium whitespace-nowrap">Email Address</th>
+                        @foreach ($activity->questions as $question)
+                            <th class="px-4 py-3 font-medium whitespace-nowrap">{{ $question->label }}</th>
+                        @endforeach
                         <th class="px-4 py-3 font-medium whitespace-nowrap">Attendance Date</th>
                         <th class="px-4 py-3 font-medium whitespace-nowrap">TTD</th>
                         <th class="px-4 py-3 font-medium whitespace-nowrap">Waktu Submit</th>
@@ -128,6 +131,9 @@
                             <td class="px-4 py-3 font-medium text-gray-900">{{ $participant->full_name }}</td>
                             <td class="px-4 py-3">{{ $participant->institution }}</td>
                             <td class="px-4 py-3">{{ $participant->email }}</td>
+                            @foreach ($activity->questions as $question)
+                                <td class="px-4 py-3">{{ $participant->displayedAnswerFor($question) }}</td>
+                            @endforeach
                             <td class="px-4 py-3">{{ $participant->formattedAttendanceDates('d M Y') }}</td>
                             <td class="px-4 py-3">
                                 @if ($signatureUrl)
